@@ -34,7 +34,6 @@
         <dependency>
             <groupId>com.firefly</groupId>
             <artifactId>core-lending-loan-servicing-sdk</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
 
