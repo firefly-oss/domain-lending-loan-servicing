@@ -1,4 +1,4 @@
-# lending-domain-loan-servicing
+# domain-lending-loan-servicing
 
 Domain layer microservice for loan servicing within the Firefly lending platform. This service orchestrates the full post-origination loan lifecycle -- from disbursement and amortization schedule generation through repayments, interest accrual, rate changes, payment holidays, arrears management, charge-offs, and loan closure -- using saga-based workflows with compensation support.
 
@@ -22,11 +22,11 @@ The Lending Domain Loan Servicing service acts as the domain orchestration layer
 
 | Module | Purpose |
 |--------|---------|
-| `lending-domain-loan-servicing-web` | Spring Boot application entry point, REST controller, actuator, and OpenAPI configuration |
-| `lending-domain-loan-servicing-core` | Business logic: CQRS commands, command handlers, saga workflow definitions, and the `LoanServicingService` |
-| `lending-domain-loan-servicing-interfaces` | Interface adapters bridging core logic and the web layer |
-| `lending-domain-loan-servicing-infra` | Infrastructure concerns: `ClientFactory` for downstream API clients, `LoanServicingProperties` configuration binding |
-| `lending-domain-loan-servicing-sdk` | Client SDK module for consumers of this service |
+| `domain-lending-loan-servicing-web` | Spring Boot application entry point, REST controller, actuator, and OpenAPI configuration |
+| `domain-lending-loan-servicing-core` | Business logic: CQRS commands, command handlers, saga workflow definitions, and the `LoanServicingService` |
+| `domain-lending-loan-servicing-interfaces` | Interface adapters bridging core logic and the web layer |
+| `domain-lending-loan-servicing-infra` | Infrastructure concerns: `ClientFactory` for downstream API clients, `LoanServicingProperties` configuration binding |
+| `domain-lending-loan-servicing-sdk` | Client SDK module for consumers of this service |
 
 ### Technology Stack
 
@@ -126,13 +126,13 @@ mvn clean install
 ### Run
 
 ```bash
-mvn -pl lending-domain-loan-servicing-web spring-boot:run
+mvn -pl domain-lending-loan-servicing-web spring-boot:run
 ```
 
 Or with a specific profile:
 
 ```bash
-mvn -pl lending-domain-loan-servicing-web spring-boot:run -Dspring-boot.run.profiles=dev
+mvn -pl domain-lending-loan-servicing-web spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 ## API Endpoints
@@ -276,6 +276,6 @@ This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) fo
 
 ## Links
 
-- **Repository:** [https://github.com/firefly-oss/lending-domain-loan-servicing](https://github.com/firefly-oss/lending-domain-loan-servicing)
+- **Repository:** [https://github.com/firefly-oss/domain-lending-loan-servicing](https://github.com/firefly-oss/domain-lending-loan-servicing)
 - **FireflyFramework:** [https://github.com/fireflyframework/](https://github.com/fireflyframework/)
 - **Team Contact:** [dev@getfirefly.io](mailto:dev@getfirefly.io)

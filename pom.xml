@@ -11,15 +11,15 @@
     </parent>
 
     <groupId>com.firefly</groupId>
-    <artifactId>lending-domain-loan-servicing</artifactId>
+    <artifactId>domain-lending-loan-servicing</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
-        <module>lending-domain-loan-servicing-core</module>
-        <module>lending-domain-loan-servicing-interfaces</module>
-        <module>lending-domain-loan-servicing-web</module>
-        <module>lending-domain-loan-servicing-sdk</module>
-        <module>lending-domain-loan-servicing-infra</module>
+        <module>domain-lending-loan-servicing-core</module>
+        <module>domain-lending-loan-servicing-interfaces</module>
+        <module>domain-lending-loan-servicing-web</module>
+        <module>domain-lending-loan-servicing-sdk</module>
+        <module>domain-lending-loan-servicing-infra</module>
     </modules>
 
     <properties>
@@ -42,27 +42,27 @@
             <!-- Internal modules -->
             <dependency>
                 <groupId>com.firefly</groupId>
-                <artifactId>lending-domain-loan-servicing-core</artifactId>
+                <artifactId>domain-lending-loan-servicing-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.firefly</groupId>
-                <artifactId>lending-domain-loan-servicing-interfaces</artifactId>
+                <artifactId>domain-lending-loan-servicing-interfaces</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.firefly</groupId>
-                <artifactId>lending-domain-loan-servicing-web</artifactId>
+                <artifactId>domain-lending-loan-servicing-web</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.firefly</groupId>
-                <artifactId>lending-domain-loan-servicing-sdk</artifactId>
+                <artifactId>domain-lending-loan-servicing-sdk</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.firefly</groupId>
-                <artifactId>lending-domain-loan-servicing-infra</artifactId>
+                <artifactId>domain-lending-loan-servicing-infra</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

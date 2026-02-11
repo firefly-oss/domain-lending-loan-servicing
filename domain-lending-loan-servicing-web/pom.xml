@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.firefly</groupId>
-        <artifactId>lending-domain-loan-servicing</artifactId>
+        <artifactId>domain-lending-loan-servicing</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>lending-domain-loan-servicing-web</artifactId>
+    <artifactId>domain-lending-loan-servicing-web</artifactId>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
@@ -21,7 +21,7 @@
         <!-- Internal modules -->
         <dependency>
             <groupId>com.firefly</groupId>
-            <artifactId>lending-domain-loan-servicing-interfaces</artifactId>
+            <artifactId>domain-lending-loan-servicing-interfaces</artifactId>
         </dependency>
 
         <!-- Common Libraries -->

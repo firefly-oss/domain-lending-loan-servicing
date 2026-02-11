@@ -30,7 +30,7 @@ import com.firefly.transactional.shared.annotations.EnableTransactionalEngine;
         ),
         servers = {
                 @Server(
-                        url = "http://core.getfirefly.io/lending-domain-loan-servicing",
+                        url = "http://core.getfirefly.io/domain-lending-loan-servicing",
                         description = "Development Environment"
                 ),
                 @Server(

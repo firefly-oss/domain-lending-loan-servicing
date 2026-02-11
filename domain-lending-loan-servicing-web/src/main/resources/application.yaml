@@ -1,6 +1,6 @@
 spring:
   application:
-    name: lending-domain-loan-servicing
+    name: domain-lending-loan-servicing
     version: 1.0.0
     description: Lending Domain Loan Servicing Layer Application
     team:

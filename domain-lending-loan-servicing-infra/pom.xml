@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.firefly</groupId>
-        <artifactId>lending-domain-loan-servicing</artifactId>
+        <artifactId>domain-lending-loan-servicing</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>lending-domain-loan-servicing-interfaces</artifactId>
+    <artifactId>domain-lending-loan-servicing-infra</artifactId>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
@@ -18,11 +18,6 @@
     </properties>
 
     <dependencies>
-        <!-- Internal modules -->
-        <dependency>
-            <groupId>com.firefly</groupId>
-            <artifactId>lending-domain-loan-servicing-core</artifactId>
-        </dependency>
 
         <!-- Common Libraries -->
         <dependency>
@@ -33,6 +28,14 @@
         <dependency>
             <groupId>org.fireflyframework</groupId>
             <artifactId>fireflyframework-validators</artifactId>
+        </dependency>
+
+        <!-- SDKs -->
+        <dependency>
+            <groupId>com.firefly</groupId>
+            <artifactId>core-lending-loan-servicing-sdk</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- Spring WebFlux -->
@@ -68,6 +71,13 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
