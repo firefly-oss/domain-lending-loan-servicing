@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(xargs sed:*)",
+      "Bash(grep:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(mvn clean install:*)",
+      "Bash(for f in domain-lending-loan-servicing-core/src/main/java/com/firefly/domain/lending/loan/servicing/core/loan/servicing/handlers/Remove*.java)",
+      "Bash(do)",
+      "Bash(if grep -q \"UUID.randomUUID\" \"$f\")",
+      "Bash(! grep -q \"import java.util.UUID\" \"$f\")",
+      "Bash(then)",
+      "Bash(echo:*)",
+      "Bash(fi)",
+      "Bash(done)"
+    ]
+  }
+}

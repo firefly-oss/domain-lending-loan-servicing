@@ -4,16 +4,16 @@ import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
+import org.fireflyframework.transactional.shared.annotations.EnableTransactionalEngine;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.web.reactive.config.EnableWebFlux;
-import com.firefly.transactional.shared.annotations.EnableTransactionalEngine;
 
 @SpringBootApplication(
         scanBasePackages = {
                 "com.firefly.domain.lending.loan.servicing",
-                "com.firefly.common.web"  // Scan common web library configurations
+                "org.fireflyframework.web"  // Scan common web library configurations
         }
 )
 @EnableWebFlux

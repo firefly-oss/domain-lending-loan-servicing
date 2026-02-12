@@ -1,7 +1,8 @@
 package com.firefly.domain.lending.loan.servicing.core.loan.servicing.handlers;
 
-import com.firefly.common.cqrs.annotations.CommandHandlerComponent;
-import com.firefly.common.cqrs.command.CommandHandler;
+import org.fireflyframework.cqrs.annotations.CommandHandlerComponent;
+import org.fireflyframework.cqrs.command.CommandHandler;
+
 import com.firefly.core.lending.servicing.sdk.api.LoanRepaymentRecordApi;
 import com.firefly.domain.lending.loan.servicing.core.loan.servicing.commands.RegisterLoanRepaymentRecordCommand;
 import reactor.core.publisher.Mono;

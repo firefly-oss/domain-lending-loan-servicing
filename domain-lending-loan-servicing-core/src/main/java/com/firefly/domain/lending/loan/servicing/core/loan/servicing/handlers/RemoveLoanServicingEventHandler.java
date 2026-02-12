@@ -1,10 +1,13 @@
 package com.firefly.domain.lending.loan.servicing.core.loan.servicing.handlers;
 
-import com.firefly.common.cqrs.annotations.CommandHandlerComponent;
-import com.firefly.common.cqrs.command.CommandHandler;
+import org.fireflyframework.cqrs.annotations.CommandHandlerComponent;
+import org.fireflyframework.cqrs.command.CommandHandler;
+
 import com.firefly.core.lending.servicing.sdk.api.LoanServicingEventApi;
 import com.firefly.domain.lending.loan.servicing.core.loan.servicing.commands.RemoveLoanServicingEventCommand;
 import reactor.core.publisher.Mono;
+
+import java.util.UUID;
 
 @CommandHandlerComponent
 public class RemoveLoanServicingEventHandler extends CommandHandler<RemoveLoanServicingEventCommand, Void> {
@@ -17,6 +20,6 @@ public class RemoveLoanServicingEventHandler extends CommandHandler<RemoveLoanSe
 
     @Override
     protected Mono<Void> doHandle(RemoveLoanServicingEventCommand cmd) {
-        return loanServicingEventApi.deleteServicingEvent(cmd.loanServicingCaseId(), cmd.loanServicingEventId()).then();
+        return loanServicingEventApi.deleteServicingEvent(cmd.loanServicingCaseId(), cmd.loanServicingEventId(), UUID.randomUUID().toString()).then();
     }
 }
