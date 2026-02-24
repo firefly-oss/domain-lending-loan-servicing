@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
-import org.fireflyframework.transactional.shared.annotations.EnableTransactionalEngine;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
@@ -39,7 +38,6 @@ import org.springframework.web.reactive.config.EnableWebFlux;
                 )
         }
 )
-@EnableTransactionalEngine
 public class LendingDomainLoanServicingApplication {
     public static void main(String[] args) {
         SpringApplication.run(LendingDomainLoanServicingApplication.class, args);

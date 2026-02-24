@@ -1,10 +1,10 @@
 package com.firefly.domain.lending.loan.servicing.core.loan.servicing.workflows;
 
 import org.fireflyframework.cqrs.command.CommandBus;
-import org.fireflyframework.transactional.saga.annotations.Saga;
-import org.fireflyframework.transactional.saga.annotations.SagaStep;
-import org.fireflyframework.transactional.saga.annotations.StepEvent;
-import org.fireflyframework.transactional.saga.core.SagaContext;
+import org.fireflyframework.orchestration.saga.annotation.Saga;
+import org.fireflyframework.orchestration.saga.annotation.SagaStep;
+import org.fireflyframework.orchestration.saga.annotation.StepEvent;
+import org.fireflyframework.orchestration.core.context.ExecutionContext;
 
 import com.firefly.domain.lending.loan.servicing.core.loan.servicing.commands.RegisterLoanAccrualCommand;
 import com.firefly.domain.lending.loan.servicing.core.loan.servicing.commands.RegisterLoanDisbursementCommand;
@@ -43,9 +43,9 @@ public class RegisterLoanServicingSaga {
 
     @SagaStep(id = STEP_REGISTER_LOAN_SERVICING, compensate = COMPENSATE_REMOVE_LOAN_SERVICING)
     @StepEvent(type = EVENT_LOAN_SERVICING_REGISTERED)
-    public Mono<UUID> registerLoanServicing(RegisterLoanServicingCaseCommand cmd, SagaContext ctx) {
+    public Mono<UUID> registerLoanServicing(RegisterLoanServicingCaseCommand cmd, ExecutionContext ctx) {
         return commandBus.send(cmd)
-                .doOnNext(loanServicingId -> ctx.variables().put(CTX_LOAN_SERVICING_ID, loanServicingId));
+                .doOnNext(loanServicingId -> ctx.putVariable(CTX_LOAN_SERVICING_ID, loanServicingId));
     }
 
     public Mono<Void> removeLoanServicing(UUID loanApplicationId) {
@@ -54,61 +54,61 @@ public class RegisterLoanServicingSaga {
 
     @SagaStep(id = STEP_REGISTER_LOAN_ACCRUAL, compensate = COMPENSATE_REMOVE_LOAN_ACCRUAL, dependsOn = STEP_REGISTER_LOAN_SERVICING)
     @StepEvent(type = EVENT_LOAN_ACCRUAL_REGISTERED)
-    public Mono<UUID> registerLoanAccrual(RegisterLoanAccrualCommand cmd, SagaContext ctx) {
+    public Mono<UUID> registerLoanAccrual(RegisterLoanAccrualCommand cmd, ExecutionContext ctx) {
         return commandBus.send(cmd.withLoanServicingCaseId(ctx.getVariableAs(CTX_LOAN_SERVICING_ID, UUID.class)));
     }
 
-    public Mono<Void> removeLoanAccrual(UUID loanAccrualId, SagaContext ctx) {
+    public Mono<Void> removeLoanAccrual(UUID loanAccrualId, ExecutionContext ctx) {
         return commandBus.send(new RemoveLoanAccrualCommand(ctx.getVariableAs(CTX_LOAN_SERVICING_ID, UUID.class), loanAccrualId));
     }
 
     @SagaStep(id = STEP_REGISTER_LOAN_DISBURSEMENT, compensate = COMPENSATE_REMOVE_LOAN_DISBURSEMENT, dependsOn = STEP_REGISTER_LOAN_SERVICING)
     @StepEvent(type = EVENT_LOAN_DISBURSEMENT_REGISTERED)
-    public Mono<UUID> registerLoanDisbursement(RegisterLoanDisbursementCommand cmd, SagaContext ctx) {
+    public Mono<UUID> registerLoanDisbursement(RegisterLoanDisbursementCommand cmd, ExecutionContext ctx) {
         return commandBus.send(cmd.withLoanServicingCaseId(ctx.getVariableAs(CTX_LOAN_SERVICING_ID, UUID.class)));
     }
 
-    public Mono<Void> removeLoanDisbursement(UUID loanDisbursementId, SagaContext ctx) {
+    public Mono<Void> removeLoanDisbursement(UUID loanDisbursementId, ExecutionContext ctx) {
         return commandBus.send(new RemoveLoanDisbursementCommand(ctx.getVariableAs(CTX_LOAN_SERVICING_ID, UUID.class), loanDisbursementId));
     }
 
     @SagaStep(id = STEP_REGISTER_LOAN_RATE_CHANGE, compensate = COMPENSATE_REMOVE_LOAN_RATE_CHANGE, dependsOn = STEP_REGISTER_LOAN_SERVICING)
     @StepEvent(type = EVENT_LOAN_RATE_CHANGE_REGISTERED)
-    public Mono<UUID> registerLoanRateChange(RegisterLoanRateChangeCommand cmd, SagaContext ctx) {
+    public Mono<UUID> registerLoanRateChange(RegisterLoanRateChangeCommand cmd, ExecutionContext ctx) {
         return commandBus.send(cmd.withLoanServicingCaseId(ctx.getVariableAs(CTX_LOAN_SERVICING_ID, UUID.class)));
     }
 
-    public Mono<Void> removeLoanRateChange(UUID loanRateChangeId, SagaContext ctx) {
+    public Mono<Void> removeLoanRateChange(UUID loanRateChangeId, ExecutionContext ctx) {
         return commandBus.send(new RemoveLoanRateChangeCommand(ctx.getVariableAs(CTX_LOAN_SERVICING_ID, UUID.class), loanRateChangeId));
     }
 
     @SagaStep(id = STEP_REGISTER_LOAN_REPAYMENT_RECORD, compensate = COMPENSATE_REMOVE_LOAN_REPAYMENT_RECORD, dependsOn = STEP_REGISTER_LOAN_SERVICING)
     @StepEvent(type = EVENT_LOAN_REPAYMENT_RECORD_REGISTERED)
-    public Mono<UUID> registerLoanRepaymentRecord(RegisterLoanRepaymentRecordCommand cmd, SagaContext ctx) {
+    public Mono<UUID> registerLoanRepaymentRecord(RegisterLoanRepaymentRecordCommand cmd, ExecutionContext ctx) {
         return commandBus.send(cmd.withLoanServicingCaseId(ctx.getVariableAs(CTX_LOAN_SERVICING_ID, UUID.class)));
     }
 
-    public Mono<Void> removeLoanRepaymentRecord(UUID loanRepaymentRecordId, SagaContext ctx) {
+    public Mono<Void> removeLoanRepaymentRecord(UUID loanRepaymentRecordId, ExecutionContext ctx) {
         return commandBus.send(new RemoveLoanRepaymentRecordCommand(ctx.getVariableAs(CTX_LOAN_SERVICING_ID, UUID.class), loanRepaymentRecordId));
     }
 
     @SagaStep(id = STEP_REGISTER_LOAN_REPAYMENT_SCHEDULE, compensate = COMPENSATE_REMOVE_LOAN_REPAYMENT_SCHEDULE, dependsOn = STEP_REGISTER_LOAN_SERVICING)
     @StepEvent(type = EVENT_LOAN_REPAYMENT_SCHEDULE_REGISTERED)
-    public Mono<UUID> registerLoanRepaymentSchedule(RegisterLoanRepaymentScheduleCommand cmd, SagaContext ctx) {
+    public Mono<UUID> registerLoanRepaymentSchedule(RegisterLoanRepaymentScheduleCommand cmd, ExecutionContext ctx) {
         return commandBus.send(cmd.withLoanServicingCaseId(ctx.getVariableAs(CTX_LOAN_SERVICING_ID, UUID.class)));
     }
 
-    public Mono<Void> removeLoanRepaymentSchedule(UUID loanRepaymentScheduleId, SagaContext ctx) {
+    public Mono<Void> removeLoanRepaymentSchedule(UUID loanRepaymentScheduleId, ExecutionContext ctx) {
         return commandBus.send(new RemoveLoanRepaymentScheduleCommand(ctx.getVariableAs(CTX_LOAN_SERVICING_ID, UUID.class), loanRepaymentScheduleId));
     }
 
     @SagaStep(id = STEP_REGISTER_LOAN_SERVICING_EVENT, compensate = COMPENSATE_REMOVE_LOAN_SERVICING_EVENT, dependsOn = STEP_REGISTER_LOAN_SERVICING)
     @StepEvent(type = EVENT_LOAN_SERVICING_EVENT_REGISTERED)
-    public Mono<UUID> registerLoanServicingEvent(RegisterLoanServicingEventCommand cmd, SagaContext ctx) {
+    public Mono<UUID> registerLoanServicingEvent(RegisterLoanServicingEventCommand cmd, ExecutionContext ctx) {
         return commandBus.send(cmd.withLoanServicingCaseId(ctx.getVariableAs(CTX_LOAN_SERVICING_ID, UUID.class)));
     }
 
-    public Mono<Void> removeLoanServicingEvent(UUID loanServicingEventId, SagaContext ctx) {
+    public Mono<Void> removeLoanServicingEvent(UUID loanServicingEventId, ExecutionContext ctx) {
         return commandBus.send(new RemoveLoanServicingEventCommand(ctx.getVariableAs(CTX_LOAN_SERVICING_ID, UUID.class), loanServicingEventId));
     }
 

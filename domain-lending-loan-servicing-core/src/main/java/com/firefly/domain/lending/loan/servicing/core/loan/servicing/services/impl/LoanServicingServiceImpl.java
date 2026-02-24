@@ -1,8 +1,8 @@
 package com.firefly.domain.lending.loan.servicing.core.loan.servicing.services.impl;
 
-import org.fireflyframework.transactional.saga.core.SagaResult;
-import org.fireflyframework.transactional.saga.engine.SagaEngine;
-import org.fireflyframework.transactional.saga.engine.StepInputs;
+import org.fireflyframework.orchestration.saga.engine.SagaResult;
+import org.fireflyframework.orchestration.saga.engine.SagaEngine;
+import org.fireflyframework.orchestration.saga.engine.StepInputs;
 
 import com.firefly.domain.lending.loan.servicing.core.loan.servicing.commands.*;
 import com.firefly.domain.lending.loan.servicing.core.loan.servicing.services.LoanServicingService;
@@ -24,17 +24,17 @@ public class LoanServicingServiceImpl implements LoanServicingService {
     @Override
     public Mono<SagaResult> submitLoanCase(SubmitLoanCaseCommand command) {
         StepInputs inputs = StepInputs.builder()
-                .forStep(RegisterLoanServicingSaga::registerLoanServicing, command.getLoanServicingCase())
-                .forStep(RegisterLoanServicingSaga::registerLoanAccrual, command.getLoanAccrual())
-                .forStep(RegisterLoanServicingSaga::registerLoanDisbursement, command.getLoanDisbursement())
-                .forStep(RegisterLoanServicingSaga::registerLoanRateChange, command.getLoanRateChange())
-                .forStep(RegisterLoanServicingSaga::registerLoanRepaymentRecord, command.getLoanRepaymentRecord())
-                .forStep(RegisterLoanServicingSaga::registerLoanRepaymentSchedule, command.getLoanRepaymentSchedule())
-                .forStep(RegisterLoanServicingSaga::registerLoanServicingEvent, command.getLoanServicingEvent())
+                .forStepId("registerLoanServicing", command.getLoanServicingCase())
+                .forStepId("registerLoanAccrual", command.getLoanAccrual())
+                .forStepId("registerLoanDisbursement", command.getLoanDisbursement())
+                .forStepId("registerLoanRateChange", command.getLoanRateChange())
+                .forStepId("registerLoanRepaymentRecord", command.getLoanRepaymentRecord())
+                .forStepId("registerLoanRepaymentSchedule", command.getLoanRepaymentSchedule())
+                .forStepId("registerLoanServicingEvent", command.getLoanServicingEvent())
 
                 .build();
 
-        return engine.execute(RegisterLoanServicingSaga.class, inputs);
+        return engine.execute("RegisterLoanServicingSaga", inputs);
     }
 
     @Override
