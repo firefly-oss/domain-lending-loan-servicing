@@ -1,0 +1,2186 @@
+openapi: 3.0.1
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:18080
+  description: Generated server url
+tags:
+- name: Loan Servicing Queries
+  description: Query endpoints for loan servicing case data
+- name: Loan Servicing
+  description: CQ queries and registration for Loan Servicing
+paths:
+  /api/v1/loans:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Submit loan case
+      description: Submit a new loan case.
+      operationId: submitApplication
+      parameters:
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitLoanCaseCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/write-back:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Write back charged-off amount
+      description: Write back previously charged-off amount.
+      operationId: writeBack
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WriteBackCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/schedule:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Generate amortization schedule
+      description: "Generate amortization schedule (method: French/German, etc.)."
+      operationId: generateSchedule
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateScheduleCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/restructure:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Apply restructuring
+      description: "Apply restructuring (tenor, rate, write-offs) with new schedule."
+      operationId: applyRestructure
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyRestructureCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/repayments:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Apply repayment
+      description: Apply repayment (interest→penalties→fees→principal order).
+      operationId: applyRepayment
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyRepaymentCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/rate:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Set new fixed rate
+      description: Set new fixed rate effective from date.
+      operationId: setFixedRate
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetFixedRateCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/prepayment:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Apply early principal reduction
+      description: Apply early principal reduction; recalc or shorten per policy.
+      operationId: applyPrepayment
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyPrepaymentCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/penalties:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Generate penalties
+      description: Generate late fees/penalties for specified period.
+      operationId: generatePenalties
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratePenaltiesCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/payment-holiday/grant:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Grant payment holiday
+      description: Grant payment holiday and adjust schedule/accrual.
+      operationId: grantPaymentHoliday
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GrantPaymentHolidayCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/payment-holiday/end:
+    post:
+      tags:
+      - Loan Servicing
+      summary: End payment holiday
+      description: End holiday and resume normal accrual.
+      operationId: endPaymentHoliday
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EndPaymentHolidayCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/interest/capitalize:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Capitalize interest
+      description: Capitalize past-due interest into principal.
+      operationId: capitalizeInterest
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CapitalizeInterestCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/interest/accrue:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Accrue interest
+      description: Accrue interest for a period.
+      operationId: accrueInterest
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccrueInterestCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/index:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Change reference index
+      description: Change reference index & spread for variable rate.
+      operationId: changeReferenceIndex
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeReferenceIndexCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/disburse:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Disburse loan
+      description: Disburse to target account on value date; update principal.
+      operationId: disburse
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DisburseCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/close:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Close loan
+      description: Close loan with zero exposure and no pending installments.
+      operationId: closeLoan
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloseLoanCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/charge-off:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Charge-off loan
+      description: Charge-off to losses (meets delinquency policy).
+      operationId: chargeOff
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChargeOffCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/arrears/normalize:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Normalize arrears
+      description: Return loan to current status.
+      operationId: normalizeArrears
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NormalizeArrearsCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}/arrears/mark:
+    post:
+      tags:
+      - Loan Servicing
+      summary: Mark loan in arrears
+      description: Flag loan in arrears as of a business date.
+      operationId: markInArrears
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkInArrearsCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loans/{loanId}:
+    get:
+      tags:
+      - Loan Servicing
+      summary: Retrieve loan details
+      description: Retrieve loan details and schedule (projection).
+      operationId: getLoanDetails
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/loan-servicing/cases/{caseId}/schedule:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan schedule
+      description: Retrieve the repayment schedule for a loan servicing case.
+      operationId: getLoanSchedule
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Schedule retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponseLoanRepaymentScheduleDTO"
+  /api/v1/loan-servicing/cases/{caseId}/restructurings:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan restructurings
+      description: Retrieve all restructurings for a loan servicing case.
+      operationId: getLoanRestructurings
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Restructurings retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponseLoanRestructuringDTO"
+  /api/v1/loan-servicing/cases/{caseId}/repayments:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan repayments
+      description: Retrieve all repayment records for a loan servicing case.
+      operationId: getLoanRepayments
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Repayments retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponseLoanRepaymentRecordDTO"
+  /api/v1/loan-servicing/cases/{caseId}/rebates:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan rebates
+      description: Retrieve all rebates for a loan servicing case.
+      operationId: getLoanRebates
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Rebates retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponse"
+  /api/v1/loan-servicing/cases/{caseId}/rate-changes:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan rate changes
+      description: Retrieve all rate changes for a loan servicing case.
+      operationId: getLoanRateChanges
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Rate changes retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponseLoanRateChangeDTO"
+  /api/v1/loan-servicing/cases/{caseId}/notifications:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan notifications
+      description: Retrieve all notifications for a loan servicing case.
+      operationId: getLoanNotifications
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Notifications retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponse"
+  /api/v1/loan-servicing/cases/{caseId}/installment-records:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan installment records
+      description: Retrieve installment records for a loan servicing case.
+      operationId: getLoanInstallmentRecords
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Installment records retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponseLoanInstallmentRecordDTO"
+  /api/v1/loan-servicing/cases/{caseId}/installment-plan:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan installment plan
+      description: Retrieve the installment plan for a loan servicing case.
+      operationId: getLoanInstallmentPlan
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Installment plan retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponseLoanInstallmentPlanDTO"
+  /api/v1/loan-servicing/cases/{caseId}/events:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan events
+      description: Retrieve all servicing events for a loan servicing case.
+      operationId: getLoanEvents
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Events retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponseLoanServicingEventDTO"
+  /api/v1/loan-servicing/cases/{caseId}/escrow:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan escrow
+      description: Retrieve escrow information for a loan servicing case.
+      operationId: getLoanEscrow
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Escrow data retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponse"
+  /api/v1/loan-servicing/cases/{caseId}/disbursements:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan disbursements
+      description: Retrieve all disbursements for a loan servicing case.
+      operationId: getLoanDisbursements
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Disbursements retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponseLoanDisbursementDTO"
+  /api/v1/loan-servicing/cases/{caseId}/disbursement-plan:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan disbursement plan
+      description: Retrieve the disbursement plan for a loan servicing case.
+      operationId: getLoanDisbursementPlan
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Disbursement plan retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponse"
+  /api/v1/loan-servicing/cases/{caseId}/balances:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan balances
+      description: Retrieve all balances for a loan servicing case.
+      operationId: getLoanBalances
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Balances retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponseLoanBalanceDTO"
+  /api/v1/loan-servicing/cases/{caseId}/accruals:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Get loan accruals
+      description: Retrieve all accruals for a loan servicing case.
+      operationId: getLoanAccruals
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Accruals retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PaginationResponseLoanAccrualDTO"
+components:
+  schemas:
+    RegisterLoanAccrualCommand:
+      required:
+      - accrualAmount
+      - accrualDate
+      - accrualType
+      - loanServicingCaseId
+      type: object
+      properties:
+        loanAccrualId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        accrualAmount:
+          type: number
+        accrualType:
+          type: string
+          enum:
+          - INTEREST
+          - PENALTY
+          - LATE_FEE
+          - SERVICING_FEE
+        accrualDate:
+          type: string
+          format: date
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RegisterLoanDisbursementCommand:
+      required:
+      - disbursementAmount
+      - disbursementDate
+      - disbursementMethod
+      - disbursementStatus
+      - isFinalDisbursement
+      - loanServicingCaseId
+      - transactionId
+      type: object
+      properties:
+        loanDisbursementId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          format: uuid
+        disbursementAmount:
+          type: number
+        disbursementDate:
+          type: string
+          format: date
+        isFinalDisbursement:
+          type: boolean
+        disbursementMethod:
+          type: string
+          enum:
+          - INTERNAL
+          - EXTERNAL
+        disbursementStatus:
+          type: string
+          enum:
+          - PENDING
+          - PROCESSING
+          - COMPLETED
+          - FAILED
+          - REVERSED
+        paymentProviderId:
+          type: string
+          format: uuid
+        distributorId:
+          type: string
+          format: uuid
+        distributorAgencyId:
+          type: string
+          format: uuid
+        distributorAgentId:
+          type: string
+          format: uuid
+        externalTransactionReference:
+          type: string
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RegisterLoanRateChangeCommand:
+      required:
+      - effectiveDate
+      - loanServicingCaseId
+      - newInterestRate
+      - oldInterestRate
+      - reasonCode
+      type: object
+      properties:
+        loanRateChangeId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        oldInterestRate:
+          type: number
+        newInterestRate:
+          type: number
+        effectiveDate:
+          type: string
+          format: date
+        reasonCode:
+          type: string
+          enum:
+          - INDEX_ADJUSTMENT
+          - RENEGOTIATION
+          - PENALTY
+          - PROMOTION
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RegisterLoanRepaymentRecordCommand:
+      required:
+      - isPartialPayment
+      - loanServicingCaseId
+      - paymentAmount
+      - paymentDate
+      - transactionId
+      type: object
+      properties:
+        loanRepaymentRecordId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        loanRepaymentScheduleId:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          format: uuid
+        paymentAmount:
+          type: number
+        paymentDate:
+          type: string
+          format: date
+        isPartialPayment:
+          type: boolean
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RegisterLoanRepaymentScheduleCommand:
+      required:
+      - dueDate
+      - feeDue
+      - installmentNumber
+      - interestDue
+      - isPaid
+      - loanServicingCaseId
+      - principalDue
+      - totalDue
+      type: object
+      properties:
+        loanRepaymentScheduleId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        installmentNumber:
+          type: integer
+          format: int32
+        dueDate:
+          type: string
+          format: date
+        principalDue:
+          type: number
+        interestDue:
+          type: number
+        feeDue:
+          type: number
+        totalDue:
+          type: number
+        isPaid:
+          type: boolean
+        paidDate:
+          type: string
+          format: date
+        paidAmount:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RegisterLoanServicingCaseCommand:
+      required:
+      - amortizationMethod
+      - applicationId
+      - compoundingFrequency
+      - contractId
+      - dayCountConvention
+      - interestCalculationMethod
+      - interestRate
+      - loanTerm
+      - maturityDate
+      - originationDate
+      - paymentFrequency
+      - principalAmount
+      - productCatalogId
+      - productId
+      - servicingStatus
+      type: object
+      properties:
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        contractId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        applicationId:
+          type: string
+          format: uuid
+        proposedOfferId:
+          type: string
+          format: uuid
+        productCatalogId:
+          type: string
+          format: uuid
+        servicingStatus:
+          type: string
+          enum:
+          - PENDING
+          - ACTIVE
+          - GRACE_PERIOD
+          - DELINQUENT
+          - DEFAULT
+          - FORBEARANCE
+          - RESTRUCTURED
+          - BANKRUPTCY
+          - FORECLOSURE
+          - CHARGED_OFF
+          - PAID_OFF
+          - CLOSED
+          - TRANSFERRED
+          - CANCELLED
+        principalAmount:
+          type: number
+        interestRate:
+          type: number
+        loanTerm:
+          type: integer
+          format: int32
+        interestCalculationMethod:
+          type: string
+          enum:
+          - SIMPLE
+          - COMPOUND
+          - ACTUARIAL
+          - REDUCING_BALANCE
+          - FLAT_RATE
+        amortizationMethod:
+          type: string
+          enum:
+          - EQUAL_INSTALLMENT
+          - EQUAL_PRINCIPAL
+          - BALLOON_PAYMENT
+          - INTEREST_ONLY
+          - BULLET
+        paymentFrequency:
+          type: string
+          enum:
+          - DAILY
+          - WEEKLY
+          - BIWEEKLY
+          - SEMIMONTHLY
+          - MONTHLY
+          - BIMONTHLY
+          - QUARTERLY
+          - SEMIANNUALLY
+          - ANNUALLY
+        compoundingFrequency:
+          type: string
+          enum:
+          - DAILY
+          - MONTHLY
+          - QUARTERLY
+          - SEMIANNUALLY
+          - ANNUALLY
+          - CONTINUOUS
+        dayCountConvention:
+          type: string
+          enum:
+          - ACTUAL_360
+          - ACTUAL_365
+          - ACTUAL_ACTUAL
+          - THIRTY_360
+        originationDate:
+          type: string
+          format: date
+        maturityDate:
+          type: string
+          format: date
+        remarks:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RegisterLoanServicingEventCommand:
+      required:
+      - description
+      - eventDate
+      - eventType
+      - loanServicingCaseId
+      type: object
+      properties:
+        loanServicingEventId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum:
+          - RESTRUCTURE
+          - EXTENSION
+          - DEFERMENT
+          - COLLECTION_CALL
+          - NOTICE
+        eventDate:
+          type: string
+          format: date
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SubmitLoanCaseCommand:
+      type: object
+      properties:
+        loanServicingCase:
+          $ref: "#/components/schemas/RegisterLoanServicingCaseCommand"
+        loanAccrual:
+          $ref: "#/components/schemas/RegisterLoanAccrualCommand"
+        loanDisbursement:
+          $ref: "#/components/schemas/RegisterLoanDisbursementCommand"
+        loanRateChange:
+          $ref: "#/components/schemas/RegisterLoanRateChangeCommand"
+        loanRepaymentRecord:
+          $ref: "#/components/schemas/RegisterLoanRepaymentRecordCommand"
+        loanRepaymentSchedule:
+          $ref: "#/components/schemas/RegisterLoanRepaymentScheduleCommand"
+        loanServicingEvent:
+          $ref: "#/components/schemas/RegisterLoanServicingEventCommand"
+    WriteBackCommand:
+      type: object
+    GenerateScheduleCommand:
+      type: object
+    ApplyRestructureCommand:
+      type: object
+    ApplyRepaymentCommand:
+      type: object
+    SetFixedRateCommand:
+      type: object
+    ApplyPrepaymentCommand:
+      type: object
+    GeneratePenaltiesCommand:
+      type: object
+    GrantPaymentHolidayCommand:
+      type: object
+    EndPaymentHolidayCommand:
+      type: object
+    CapitalizeInterestCommand:
+      type: object
+    AccrueInterestCommand:
+      type: object
+    ChangeReferenceIndexCommand:
+      type: object
+    DisburseCommand:
+      type: object
+    CloseLoanCommand:
+      type: object
+    ChargeOffCommand:
+      type: object
+    NormalizeArrearsCommand:
+      type: object
+    MarkInArrearsCommand:
+      type: object
+    LoanRepaymentScheduleDTO:
+      required:
+      - dueDate
+      - feeDue
+      - installmentNumber
+      - interestDue
+      - isPaid
+      - loanServicingCaseId
+      - principalDue
+      - totalDue
+      type: object
+      properties:
+        loanRepaymentScheduleId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        installmentNumber:
+          type: integer
+          format: int32
+        dueDate:
+          type: string
+          format: date
+        principalDue:
+          type: number
+        interestDue:
+          type: number
+        feeDue:
+          type: number
+        totalDue:
+          type: number
+        isPaid:
+          type: boolean
+        paidDate:
+          type: string
+          format: date
+        paidAmount:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaginationResponseLoanRepaymentScheduleDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoanRepaymentScheduleDTO"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        currentPage:
+          type: integer
+          format: int32
+    LoanRestructuringDTO:
+      required:
+      - loanServicingCaseId
+      - newAmortizationMethod
+      - newCompoundingFrequency
+      - newDayCountConvention
+      - newInterestCalculationMethod
+      - newInterestRate
+      - newLoanTerm
+      - newMaturityDate
+      - newPaymentFrequency
+      - newPrincipalAmount
+      - oldAmortizationMethod
+      - oldCompoundingFrequency
+      - oldDayCountConvention
+      - oldInterestCalculationMethod
+      - oldInterestRate
+      - oldLoanTerm
+      - oldMaturityDate
+      - oldPaymentFrequency
+      - oldPrincipalAmount
+      - reason
+      - restructuringDate
+      type: object
+      properties:
+        loanRestructuringId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        restructuringDate:
+          type: string
+          format: date
+        reason:
+          type: string
+        oldPrincipalAmount:
+          type: number
+        oldInterestRate:
+          type: number
+        oldLoanTerm:
+          type: integer
+          format: int32
+        oldInterestCalculationMethod:
+          type: string
+          enum:
+          - SIMPLE
+          - COMPOUND
+          - ACTUARIAL
+          - REDUCING_BALANCE
+          - FLAT_RATE
+        oldAmortizationMethod:
+          type: string
+          enum:
+          - EQUAL_INSTALLMENT
+          - EQUAL_PRINCIPAL
+          - BALLOON_PAYMENT
+          - INTEREST_ONLY
+          - BULLET
+        oldPaymentFrequency:
+          type: string
+          enum:
+          - DAILY
+          - WEEKLY
+          - BIWEEKLY
+          - SEMIMONTHLY
+          - MONTHLY
+          - BIMONTHLY
+          - QUARTERLY
+          - SEMIANNUALLY
+          - ANNUALLY
+        oldCompoundingFrequency:
+          type: string
+          enum:
+          - DAILY
+          - MONTHLY
+          - QUARTERLY
+          - SEMIANNUALLY
+          - ANNUALLY
+          - CONTINUOUS
+        oldDayCountConvention:
+          type: string
+          enum:
+          - ACTUAL_360
+          - ACTUAL_365
+          - ACTUAL_ACTUAL
+          - THIRTY_360
+        oldMaturityDate:
+          type: string
+          format: date
+        newPrincipalAmount:
+          type: number
+        newInterestRate:
+          type: number
+        newLoanTerm:
+          type: integer
+          format: int32
+        newInterestCalculationMethod:
+          type: string
+          enum:
+          - SIMPLE
+          - COMPOUND
+          - ACTUARIAL
+          - REDUCING_BALANCE
+          - FLAT_RATE
+        newAmortizationMethod:
+          type: string
+          enum:
+          - EQUAL_INSTALLMENT
+          - EQUAL_PRINCIPAL
+          - BALLOON_PAYMENT
+          - INTEREST_ONLY
+          - BULLET
+        newPaymentFrequency:
+          type: string
+          enum:
+          - DAILY
+          - WEEKLY
+          - BIWEEKLY
+          - SEMIMONTHLY
+          - MONTHLY
+          - BIMONTHLY
+          - QUARTERLY
+          - SEMIANNUALLY
+          - ANNUALLY
+        newCompoundingFrequency:
+          type: string
+          enum:
+          - DAILY
+          - MONTHLY
+          - QUARTERLY
+          - SEMIANNUALLY
+          - ANNUALLY
+          - CONTINUOUS
+        newDayCountConvention:
+          type: string
+          enum:
+          - ACTUAL_360
+          - ACTUAL_365
+          - ACTUAL_ACTUAL
+          - THIRTY_360
+        newMaturityDate:
+          type: string
+          format: date
+        approvedBy:
+          type: string
+          format: uuid
+        remarks:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaginationResponseLoanRestructuringDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoanRestructuringDTO"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        currentPage:
+          type: integer
+          format: int32
+    LoanRepaymentRecordDTO:
+      required:
+      - isPartialPayment
+      - loanServicingCaseId
+      - paymentAmount
+      - paymentDate
+      - transactionId
+      type: object
+      properties:
+        loanRepaymentRecordId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        loanRepaymentScheduleId:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          format: uuid
+        paymentAmount:
+          type: number
+        paymentDate:
+          type: string
+          format: date
+        isPartialPayment:
+          type: boolean
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaginationResponseLoanRepaymentRecordDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoanRepaymentRecordDTO"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        currentPage:
+          type: integer
+          format: int32
+    PaginationResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            type: object
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        currentPage:
+          type: integer
+          format: int32
+    LoanRateChangeDTO:
+      required:
+      - effectiveDate
+      - loanServicingCaseId
+      - newInterestRate
+      - oldInterestRate
+      - reasonCode
+      type: object
+      properties:
+        loanRateChangeId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        oldInterestRate:
+          type: number
+        newInterestRate:
+          type: number
+        effectiveDate:
+          type: string
+          format: date
+        reasonCode:
+          type: string
+          enum:
+          - INDEX_ADJUSTMENT
+          - RENEGOTIATION
+          - PENALTY
+          - PROMOTION
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaginationResponseLoanRateChangeDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoanRateChangeDTO"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        currentPage:
+          type: integer
+          format: int32
+    LoanInstallmentRecordDTO:
+      required:
+      - isPartialPayment
+      - loanServicingCaseId
+      - paymentAmount
+      - paymentDate
+      - paymentMethod
+      - paymentStatus
+      - transactionId
+      type: object
+      properties:
+        loanInstallmentRecordId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        loanInstallmentPlanId:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          format: uuid
+        paymentAmount:
+          type: number
+        paymentDate:
+          type: string
+          format: date
+        isPartialPayment:
+          type: boolean
+        paymentMethod:
+          type: string
+          enum:
+          - INTERNAL
+          - EXTERNAL
+        paymentStatus:
+          type: string
+          enum:
+          - PENDING
+          - PROCESSING
+          - COMPLETED
+          - FAILED
+          - REVERSED
+        paymentProviderId:
+          type: string
+          format: uuid
+        externalTransactionReference:
+          type: string
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaginationResponseLoanInstallmentRecordDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoanInstallmentRecordDTO"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        currentPage:
+          type: integer
+          format: int32
+    LoanInstallmentPlanDTO:
+      required:
+      - dueDate
+      - feeDue
+      - installmentNumber
+      - interestDue
+      - isAutomaticPayment
+      - isPaid
+      - loanServicingCaseId
+      - paymentMethod
+      - principalDue
+      - totalDue
+      type: object
+      properties:
+        loanInstallmentPlanId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        installmentNumber:
+          type: integer
+          format: int32
+        dueDate:
+          type: string
+          format: date
+        principalDue:
+          type: number
+        interestDue:
+          type: number
+        feeDue:
+          type: number
+        totalDue:
+          type: number
+        isPaid:
+          type: boolean
+        paidDate:
+          type: string
+          format: date
+        paidAmount:
+          type: number
+        paymentMethod:
+          type: string
+          enum:
+          - INTERNAL
+          - EXTERNAL
+        paymentAccountId:
+          type: string
+          format: uuid
+        paymentProviderId:
+          type: string
+          format: uuid
+        externalAccountReference:
+          type: string
+        isAutomaticPayment:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaginationResponseLoanInstallmentPlanDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoanInstallmentPlanDTO"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        currentPage:
+          type: integer
+          format: int32
+    LoanServicingEventDTO:
+      required:
+      - description
+      - eventDate
+      - eventType
+      - loanServicingCaseId
+      type: object
+      properties:
+        loanServicingEventId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum:
+          - RESTRUCTURE
+          - EXTENSION
+          - DEFERMENT
+          - COLLECTION_CALL
+          - NOTICE
+        eventDate:
+          type: string
+          format: date
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaginationResponseLoanServicingEventDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoanServicingEventDTO"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        currentPage:
+          type: integer
+          format: int32
+    LoanDisbursementDTO:
+      required:
+      - disbursementAmount
+      - disbursementDate
+      - disbursementMethod
+      - disbursementStatus
+      - isFinalDisbursement
+      - loanServicingCaseId
+      - transactionId
+      type: object
+      properties:
+        loanDisbursementId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          format: uuid
+        disbursementAmount:
+          type: number
+        disbursementDate:
+          type: string
+          format: date
+        isFinalDisbursement:
+          type: boolean
+        disbursementMethod:
+          type: string
+          enum:
+          - INTERNAL
+          - EXTERNAL
+        disbursementStatus:
+          type: string
+          enum:
+          - PENDING
+          - PROCESSING
+          - COMPLETED
+          - FAILED
+          - REVERSED
+        paymentProviderId:
+          type: string
+          format: uuid
+        distributorId:
+          type: string
+          format: uuid
+        distributorAgencyId:
+          type: string
+          format: uuid
+        distributorAgentId:
+          type: string
+          format: uuid
+        externalTransactionReference:
+          type: string
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaginationResponseLoanDisbursementDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoanDisbursementDTO"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        currentPage:
+          type: integer
+          format: int32
+    LoanBalanceDTO:
+      required:
+      - balanceDate
+      - feesOutstanding
+      - interestOutstanding
+      - isCurrent
+      - loanServicingCaseId
+      - principalOutstanding
+      - totalOutstanding
+      type: object
+      properties:
+        loanBalanceId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        principalOutstanding:
+          type: number
+        interestOutstanding:
+          type: number
+        feesOutstanding:
+          type: number
+        totalOutstanding:
+          type: number
+        balanceDate:
+          type: string
+          format: date
+        isCurrent:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaginationResponseLoanBalanceDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoanBalanceDTO"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        currentPage:
+          type: integer
+          format: int32
+    LoanAccrualDTO:
+      required:
+      - accrualAmount
+      - accrualDate
+      - accrualType
+      - loanServicingCaseId
+      type: object
+      properties:
+        loanAccrualId:
+          type: string
+          format: uuid
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        accrualAmount:
+          type: number
+        accrualType:
+          type: string
+          enum:
+          - INTEREST
+          - PENALTY
+          - LATE_FEE
+          - SERVICING_FEE
+        accrualDate:
+          type: string
+          format: date
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaginationResponseLoanAccrualDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoanAccrualDTO"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        currentPage:
+          type: integer
+          format: int32
