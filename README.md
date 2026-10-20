@@ -1,4 +1,17 @@
-# domain-lending-loan-servicing
+<a href="https://fireflysoftware.io/openplatform/">
+<picture>
+  <source media="(max-width: 640px) and (prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/firefly-oss/.github/main/profile/assets/banner-narrow-dark.svg">
+  <source media="(max-width: 640px)" srcset="https://raw.githubusercontent.com/firefly-oss/.github/main/profile/assets/banner-narrow-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/firefly-oss/.github/main/profile/assets/banner-dark.svg">
+  <img src="https://raw.githubusercontent.com/firefly-oss/.github/main/profile/assets/banner-light.svg" alt="Firefly OpenPlatform - Domain Lending - Loan Servicing" width="100%">
+</picture>
+</a>
+
+# Firefly OpenPlatform - Domain Lending - Loan Servicing
+
+Developed by the Firefly Software Foundation. [dev@fireflysoftware.io](mailto:dev@fireflysoftware.io)
+
+[Website](https://fireflysoftware.io/) · [OpenPlatform](https://fireflysoftware.io/openplatform/) · [Module catalogue](https://fireflysoftware.io/openplatform/modules/)
 
 Domain layer microservice for loan servicing within the Firefly lending platform. This service orchestrates the full post-origination loan lifecycle -- from disbursement and amortization schedule generation through repayments, interest accrual, rate changes, payment holidays, arrears management, charge-offs, and loan closure -- using saga-based workflows with compensation support.
 
