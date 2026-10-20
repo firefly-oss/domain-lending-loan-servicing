@@ -12,6 +12,7 @@
     </parent>
 
     <artifactId>domain-lending-loan-servicing</artifactId>
+    <name>domain-lending-loan-servicing</name>
     <version>26.10.3</version>
     <packaging>pom</packaging>
     <modules>

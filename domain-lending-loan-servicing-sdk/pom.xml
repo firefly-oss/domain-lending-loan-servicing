@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>domain-lending-loan-servicing-sdk</artifactId>
+    <name>domain-lending-loan-servicing-sdk</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

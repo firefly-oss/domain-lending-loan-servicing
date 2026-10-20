@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>domain-lending-loan-servicing-core</artifactId>
+    <name>domain-lending-loan-servicing-core</name>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
