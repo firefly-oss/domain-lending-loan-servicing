@@ -126,8 +126,8 @@ api-configuration:
 
 | Profile | Behavior |
 |---------|----------|
-| `dev` | DEBUG logging for `com.firefly`, R2DBC, and Flyway; Swagger UI enabled |
-| `testing` | DEBUG logging for `com.firefly`; Swagger UI enabled |
+| `dev` | DEBUG logging for `io.fireflysoftware`, R2DBC, and Flyway; Swagger UI enabled |
+| `testing` | DEBUG logging for `io.fireflysoftware`; Swagger UI enabled |
 | `prod` | WARN-level logging; Swagger UI and API docs disabled |
 
 ### Build

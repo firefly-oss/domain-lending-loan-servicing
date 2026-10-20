@@ -1,0 +1,28 @@
+package io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.handlers;
+
+import org.fireflyframework.cqrs.annotations.CommandHandlerComponent;
+import org.fireflyframework.cqrs.command.CommandHandler;
+
+import io.fireflysoftware.core.lending.servicing.sdk.api.LoanRateChangeApi;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.RegisterLoanRateChangeCommand;
+import reactor.core.publisher.Mono;
+
+import java.util.Objects;
+import java.util.UUID;
+
+@CommandHandlerComponent
+public class RegisterLoanRateChangeHandler extends CommandHandler<RegisterLoanRateChangeCommand, UUID> {
+
+    private final LoanRateChangeApi loanRateChangeApi;
+
+    public RegisterLoanRateChangeHandler(LoanRateChangeApi loanRateChangeApi) {
+        this.loanRateChangeApi = loanRateChangeApi;
+    }
+
+    @Override
+    protected Mono<UUID> doHandle(RegisterLoanRateChangeCommand cmd) {
+        return loanRateChangeApi.createRateChange(cmd.getLoanServicingCaseId(), cmd, UUID.randomUUID().toString())
+                .mapNotNull(response ->
+                        Objects.requireNonNull(Objects.requireNonNull(response)).getLoanRateChangeId());
+    }
+}

@@ -1,0 +1,20 @@
+package io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands;
+
+import org.fireflyframework.cqrs.command.Command;
+
+import io.fireflysoftware.core.lending.servicing.sdk.model.LoanServicingEventDTO;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.util.UUID;
+
+@EqualsAndHashCode(callSuper = true)
+@Data
+public class RegisterLoanServicingEventCommand extends LoanServicingEventDTO implements Command<UUID> {
+    private UUID loanServicingCaseId;
+
+    public RegisterLoanServicingEventCommand withLoanServicingCaseId(UUID loanServicingCaseId) {
+        this.loanServicingCaseId = loanServicingCaseId;
+        return this;
+    }
+}

@@ -1,0 +1,11 @@
+package io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands;
+
+import org.fireflyframework.cqrs.command.Command;
+
+
+import java.util.UUID;
+
+public record RemoveLoanAccrualCommand(
+        UUID loanServicingCaseId,
+        UUID loanAccrualId
+) implements Command<Void>{}
