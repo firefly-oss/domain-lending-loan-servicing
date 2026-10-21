@@ -37,7 +37,12 @@
         </dependency>
         <dependency>
             <groupId>io.fireflysoftware</groupId>
-            <artifactId>domain-core-pricing-engine-sdk</artifactId>
+            <artifactId>core-common-product-mgmt-sdk</artifactId>
+            <version>26.10.3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.fireflysoftware</groupId>
+            <artifactId>core-common-accounting-gl-sdk</artifactId>
             <version>26.10.3</version>
         </dependency>
 

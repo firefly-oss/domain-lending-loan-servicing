@@ -17,11 +17,8 @@
 
 package io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance;
 
-import io.fireflysoftware.domain.core.pricing.engine.sdk.api.PricingEngineProductsApi;
-import io.fireflysoftware.domain.core.pricing.engine.sdk.api.PricingEngineSimulationApi;
-import io.fireflysoftware.domain.core.pricing.engine.sdk.invoker.ApiClient;
-import io.fireflysoftware.domain.core.pricing.engine.sdk.model.CalculateSimulationCommand;
-import io.fireflysoftware.domain.core.pricing.engine.sdk.model.ProductPricingDTO;
+import io.fireflysoftware.core.product.sdk.api.ProductApi;
+import io.fireflysoftware.core.product.sdk.invoker.ApiClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -32,25 +29,25 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
- * Live price adapter. Passes principal, term, and product id to the pricing engine SDK.
+ * Live price adapter. Confirms the product through core-common-product-mgmt-sdk,
+ * then prices from the loan product brackets. It does not call a domain service.
+ * core-common-pricing-mgmt stays empty and is not used.
  */
 @Component
-@ConditionalOnProperty(name = "firefly.lending.price.adapter", havingValue = "engine")
+@ConditionalOnProperty(name = "firefly.lending.price.adapter", havingValue = "core")
 public class SdkLoanPriceAdapter implements LoanPricePort {
 
-    private final PricingEngineProductsApi products;
-    private final PricingEngineSimulationApi simulations;
+    private final ProductApi products;
 
     @Autowired
-    public SdkLoanPriceAdapter(@Value("${firefly.lending.price.engine-base-url:http://localhost:18080}") String baseUrl) {
+    public SdkLoanPriceAdapter(@Value("${firefly.lending.price.product-base-url:http://localhost:8080}") String baseUrl) {
         ApiClient client = new ApiClient();
         client.setBasePath(strip(baseUrl));
-        this(new PricingEngineProductsApi(client), new PricingEngineSimulationApi(client));
+        this(new ProductApi(client));
     }
 
-    SdkLoanPriceAdapter(PricingEngineProductsApi products, PricingEngineSimulationApi simulations) {
+    SdkLoanPriceAdapter(ProductApi products) {
         this.products = products;
-        this.simulations = simulations;
     }
 
     @Override
@@ -58,39 +55,15 @@ public class SdkLoanPriceAdapter implements LoanPricePort {
         if (principal == null || principal.signum() <= 0 || term < 1 || productId == null) {
             return Mono.error(new IllegalArgumentException("Principal, term, and product id are required"));
         }
-        return products.getEngineProductPricing(productId, null)
-                .flatMap(pricing -> simulations.calculateSimulation(command(principal, term, productId, pricing), null))
-                .map(result -> {
-                    String currency = result.getCurrency();
-                    if (currency == null || !currency.matches("[A-Z]{3}")) {
-                        throw new IllegalArgumentException("Currency must be a 3-letter code");
-                    }
-                    if (result.getTin() == null || result.getMonthlyPayment() == null) {
-                        throw new IllegalStateException("Pricing engine did not return a rate and installment");
-                    }
-                    return new LoanPrice(result.getTin(), result.getMonthlyPayment(), currency);
-                });
-    }
-
-    private static CalculateSimulationCommand command(
-            BigDecimal principal, int term, UUID productId, ProductPricingDTO pricing) {
-        if (pricing.getProductType() == null || pricing.getProductType().isBlank()) {
-            throw new IllegalStateException("Product pricing configuration has no product type");
-        }
-        CalculateSimulationCommand command = new CalculateSimulationCommand()
-                .productId(productId)
-                .productType(pricing.getProductType())
-                .requestedAmount(principal)
-                .term(term);
-        if (pricing.getCurrency() != null) {
-            command.currency(pricing.getCurrency());
-        }
-        return command;
+        return products.getProductById(productId, null)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Product was not found")))
+                .map(product -> ProductInterestCatalog.price(principal, term,
+                        product.getProductId() == null ? productId : product.getProductId()));
     }
 
     private static String strip(String baseUrl) {
         if (baseUrl == null || baseUrl.isBlank()) {
-            return "http://localhost:18080";
+            return "http://localhost:8080";
         }
         return baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
     }
