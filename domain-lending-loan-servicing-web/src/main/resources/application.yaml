@@ -13,6 +13,16 @@ spring:
 
 
 firefly:
+  lending:
+    price:
+      adapter: sandbox
+      engine-base-url: http://localhost:18080
+    ledger:
+      adapter: sandbox
+      core-base-url: http://localhost:8080
+    accounting:
+      adapter: sandbox
+      domain-base-url: http://localhost:18122
   cqrs:
     enabled: true
     command:

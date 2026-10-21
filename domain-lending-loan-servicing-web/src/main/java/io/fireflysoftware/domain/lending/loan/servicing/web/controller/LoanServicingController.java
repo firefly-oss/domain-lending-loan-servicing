@@ -17,6 +17,8 @@
 
 package io.fireflysoftware.domain.lending.loan.servicing.web.controller;
 
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.EndOfDayResult;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.LoanEndOfDayService;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.*;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.services.LoanServicingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +29,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
+
 @RestController
 @RequestMapping("/api/v1/loans")
 @RequiredArgsConstructor
@@ -34,6 +38,13 @@ import reactor.core.publisher.Mono;
 public class LoanServicingController {
 
     private final LoanServicingService loanServicingService;
+    private final LoanEndOfDayService loanEndOfDayService;
+
+    @Operation(summary = "Run end of day", description = "Accrue interest for open loans and post it to the general ledger.")
+    @PostMapping("/end-of-day")
+    public Mono<ResponseEntity<EndOfDayResult>> endOfDay(@RequestBody EndOfDayRequest request) {
+        return loanEndOfDayService.run(request.businessDate()).map(ResponseEntity::ok);
+    }
 
     @Operation(summary = "Submit loan case", description = "Submit a new loan case.")
     @PostMapping
@@ -166,6 +177,9 @@ public class LoanServicingController {
     public Mono<ResponseEntity<Object>> getLoanDetails(@PathVariable String loanId) {
         return loanServicingService.getLoanDetails(loanId)
                 .map(ResponseEntity::ok);
+    }
+
+    public record EndOfDayRequest(LocalDate businessDate) {
     }
 
 }

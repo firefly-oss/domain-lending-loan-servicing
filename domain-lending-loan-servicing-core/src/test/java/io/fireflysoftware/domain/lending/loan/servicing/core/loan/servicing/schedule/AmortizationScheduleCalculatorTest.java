@@ -44,6 +44,7 @@ class AmortizationScheduleCalculatorTest {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         assertThat(principal).isEqualByComparingTo("1200.00");
         assertThat(rows.get(0).interestDue()).isEqualByComparingTo("12.00");
+        assertThat(rows.get(11).remainingBalance()).isEqualByComparingTo("0.00");
     }
 
     @Test

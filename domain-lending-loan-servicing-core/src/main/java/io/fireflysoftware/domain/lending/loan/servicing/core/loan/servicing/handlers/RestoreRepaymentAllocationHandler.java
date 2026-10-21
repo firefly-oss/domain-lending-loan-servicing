@@ -21,6 +21,7 @@ import io.fireflysoftware.core.lending.servicing.sdk.api.LoanBalanceApi;
 import io.fireflysoftware.core.lending.servicing.sdk.api.LoanRepaymentRecordApi;
 import io.fireflysoftware.core.lending.servicing.sdk.api.LoanRepaymentScheduleApi;
 import io.fireflysoftware.core.lending.servicing.sdk.model.LoanRepaymentScheduleDTO;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.LedgerPort;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.AllocateRepaymentCommand;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.RestoreRepaymentAllocationCommand;
 import org.fireflyframework.cqrs.annotations.CommandHandlerComponent;
@@ -36,14 +37,17 @@ public class RestoreRepaymentAllocationHandler extends CommandHandler<RestoreRep
     private final LoanRepaymentRecordApi repaymentRecordApi;
     private final LoanBalanceApi balanceApi;
     private final LoanRepaymentScheduleApi scheduleApi;
+    private final LedgerPort ledger;
 
     public RestoreRepaymentAllocationHandler(
             LoanRepaymentRecordApi repaymentRecordApi,
             LoanBalanceApi balanceApi,
-            LoanRepaymentScheduleApi scheduleApi) {
+            LoanRepaymentScheduleApi scheduleApi,
+            LedgerPort ledger) {
         this.repaymentRecordApi = repaymentRecordApi;
         this.balanceApi = balanceApi;
         this.scheduleApi = scheduleApi;
+        this.ledger = ledger;
     }
 
     @Override
@@ -74,6 +78,14 @@ public class RestoreRepaymentAllocationHandler extends CommandHandler<RestoreRep
         Mono<Void> deleteNewBalance = allocation.newBalanceId() == null
                 ? Mono.empty()
                 : balanceApi.deleteBalance(caseId, allocation.newBalanceId(), key()).onErrorResume(ignored -> Mono.empty());
+        Mono<Void> reverseLedger = ledger.reverse(allocation.ledgerPostingId());
+        Mono<Void> unpay = allocation.paidInstallment() == null || allocation.paidInstallment().getLoanRepaymentScheduleId() == null
+                ? Mono.empty()
+                : scheduleApi.updateRepaymentSchedule(
+                        caseId,
+                        allocation.paidInstallment().getLoanRepaymentScheduleId(),
+                        allocation.paidInstallment(),
+                        key()).then();
         Mono<Void> deleteRepayment = allocation.repaymentId() == null
                 ? Mono.empty()
                 : repaymentRecordApi.deleteRepaymentRecord(caseId, allocation.repaymentId(), key())
@@ -82,6 +94,8 @@ public class RestoreRepaymentAllocationHandler extends CommandHandler<RestoreRep
                 .then(restoreSchedules)
                 .then(restoreBalance)
                 .then(deleteNewBalance)
+                .then(reverseLedger)
+                .then(unpay)
                 .then(deleteRepayment);
     }
 

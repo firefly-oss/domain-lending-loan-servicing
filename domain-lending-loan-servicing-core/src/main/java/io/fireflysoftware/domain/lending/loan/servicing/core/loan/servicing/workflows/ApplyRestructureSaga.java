@@ -18,10 +18,13 @@
 package io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.workflows;
 
 import io.fireflysoftware.core.lending.servicing.sdk.model.LoanServicingCaseDTO;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.ScheduleRevision;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.ApplyLoanServicingStatusCommand;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.GetLoanServicingCaseQuery;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.RegisterLoanRestructuringCommand;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.RemoveLoanRestructuringCommand;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.ReplaceRemainingScheduleCommand;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.RestoreReplacedScheduleCommand;
 import org.fireflyframework.cqrs.command.CommandBus;
 import org.fireflyframework.cqrs.query.QueryBus;
 import org.fireflyframework.orchestration.core.context.ExecutionContext;
@@ -125,6 +128,19 @@ public class ApplyRestructureSaga {
             current.setRemarks(command.getReason());
         }
         return commandBus.send(new ApplyLoanServicingStatusCommand(current.getLoanServicingCaseId(), current));
+    }
+
+    @SagaStep(id = "replaceSchedule", dependsOn = "applyNewTerms", compensate = "restoreSchedule")
+    @StepEvent(type = "loanSchedule.replaced")
+    public Mono<ScheduleRevision> replaceSchedule(ReplaceRemainingScheduleCommand command, ExecutionContext ctx) {
+        return commandBus.send(command);
+    }
+
+    public Mono<Void> restoreSchedule(ScheduleRevision revision, ExecutionContext ctx) {
+        if (revision == null || revision.loanServicingCaseId() == null) {
+            return Mono.empty();
+        }
+        return commandBus.send(new RestoreReplacedScheduleCommand(revision));
     }
 
     public Mono<Void> restoreTerms(LoanServicingCaseDTO updated, ExecutionContext ctx) {

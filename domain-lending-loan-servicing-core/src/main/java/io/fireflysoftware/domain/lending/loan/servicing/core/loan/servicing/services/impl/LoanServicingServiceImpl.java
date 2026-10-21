@@ -46,6 +46,7 @@ import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.comm
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.RegisterLoanDisbursementCommand;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.RegisterLoanRateChangeCommand;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.RegisterLoanRestructuringCommand;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.ReplaceRemainingScheduleCommand;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.SetFixedRateCommand;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.SubmitLoanCaseCommand;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.WriteBackCommand;
@@ -173,6 +174,7 @@ public class LoanServicingServiceImpl implements LoanServicingService {
                 .forStepId("retrieveCase", new GetLoanServicingCaseQuery(caseId))
                 .forStepId("registerRestructuring", register)
                 .forStepId("applyNewTerms", register)
+                .forStepId("replaceSchedule", new ReplaceRemainingScheduleCommand(caseId))
                 .build());
     }
 

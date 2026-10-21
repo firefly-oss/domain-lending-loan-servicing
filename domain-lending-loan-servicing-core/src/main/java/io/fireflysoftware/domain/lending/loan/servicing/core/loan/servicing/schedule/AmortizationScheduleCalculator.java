@@ -41,7 +41,8 @@ public final class AmortizationScheduleCalculator {
             BigDecimal principalDue,
             BigDecimal interestDue,
             BigDecimal feeDue,
-            BigDecimal totalDue
+            BigDecimal totalDue,
+            BigDecimal remainingBalance
     ) {
     }
 
@@ -52,6 +53,17 @@ public final class AmortizationScheduleCalculator {
             String paymentFrequency,
             String amortizationMethod,
             LocalDate firstDueDate) {
+        return generate(principal, annualRatePercent, term, paymentFrequency, amortizationMethod, firstDueDate, null);
+    }
+
+    public static List<Installment> generate(
+            BigDecimal principal,
+            BigDecimal annualRatePercent,
+            int term,
+            String paymentFrequency,
+            String amortizationMethod,
+            LocalDate firstDueDate,
+            BigDecimal installmentAmount) {
         if (principal == null || principal.signum() <= 0) {
             throw new IllegalArgumentException("Principal amount is required");
         }
@@ -68,10 +80,11 @@ public final class AmortizationScheduleCalculator {
                 .divide(BigDecimal.valueOf(100), RATE_SCALE, ROUNDING)
                 .divide(BigDecimal.valueOf(periodsPerYear(paymentFrequency)), RATE_SCALE, ROUNDING);
         String method = amortizationMethod == null ? "EQUAL_INSTALLMENT" : amortizationMethod;
+        BigDecimal priced = installmentAmount == null ? null : money(installmentAmount);
         return switch (method) {
             case "EQUAL_PRINCIPAL" -> equalPrincipal(principal, periodicRate, term, paymentFrequency, firstDueDate);
             case "INTEREST_ONLY", "BULLET" -> interestOnly(principal, periodicRate, term, paymentFrequency, firstDueDate);
-            default -> levelPayment(principal, periodicRate, term, paymentFrequency, firstDueDate);
+            default -> levelPayment(principal, periodicRate, term, paymentFrequency, firstDueDate, priced);
         };
     }
 
@@ -106,8 +119,13 @@ public final class AmortizationScheduleCalculator {
     }
 
     private static List<Installment> levelPayment(
-            BigDecimal principal, BigDecimal periodicRate, int term, String frequency, LocalDate firstDueDate) {
-        BigDecimal payment = levelInstallment(principal, periodicRate, term);
+            BigDecimal principal,
+            BigDecimal periodicRate,
+            int term,
+            String frequency,
+            LocalDate firstDueDate,
+            BigDecimal pricedInstallment) {
+        BigDecimal payment = pricedInstallment == null ? levelInstallment(principal, periodicRate, term) : pricedInstallment;
         List<Installment> rows = new ArrayList<>();
         BigDecimal remaining = principal;
         LocalDate due = firstDueDate;
@@ -117,7 +135,7 @@ public final class AmortizationScheduleCalculator {
                     ? remaining
                     : payment.subtract(interest).min(remaining).max(BigDecimal.ZERO);
             remaining = remaining.subtract(principalPart);
-            rows.add(row(number, due, principalPart, interest));
+            rows.add(row(number, due, principalPart, interest, remaining));
             due = addPeriod(due, frequency);
         }
         return rows;
@@ -133,7 +151,7 @@ public final class AmortizationScheduleCalculator {
             BigDecimal thisPrincipal = number == term ? remaining : principalPart.min(remaining);
             BigDecimal interest = money(remaining.multiply(periodicRate));
             remaining = remaining.subtract(thisPrincipal);
-            rows.add(row(number, due, thisPrincipal, interest));
+            rows.add(row(number, due, thisPrincipal, interest, remaining));
             due = addPeriod(due, frequency);
         }
         return rows;
@@ -146,7 +164,8 @@ public final class AmortizationScheduleCalculator {
         BigDecimal interest = money(principal.multiply(periodicRate));
         for (int number = 1; number <= term; number++) {
             BigDecimal principalPart = number == term ? principal : BigDecimal.ZERO.setScale(MONEY_SCALE, ROUNDING);
-            rows.add(row(number, due, principalPart, interest));
+            BigDecimal remaining = number == term ? BigDecimal.ZERO : principal;
+            rows.add(row(number, due, principalPart, interest, remaining));
             due = addPeriod(due, frequency);
         }
         return rows;
@@ -162,11 +181,12 @@ public final class AmortizationScheduleCalculator {
                 .divide(factor.subtract(BigDecimal.ONE), RATE_SCALE, ROUNDING));
     }
 
-    private static Installment row(int number, LocalDate due, BigDecimal principalPart, BigDecimal interest) {
+    private static Installment row(
+            int number, LocalDate due, BigDecimal principalPart, BigDecimal interest, BigDecimal remaining) {
         BigDecimal principalDue = money(principalPart);
         BigDecimal interestDue = money(interest);
         BigDecimal fee = BigDecimal.ZERO.setScale(MONEY_SCALE, ROUNDING);
-        return new Installment(number, due, principalDue, interestDue, fee, principalDue.add(interestDue));
+        return new Installment(number, due, principalDue, interestDue, fee, principalDue.add(interestDue), money(remaining));
     }
 
     private static BigDecimal money(BigDecimal value) {

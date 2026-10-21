@@ -17,19 +17,19 @@
 
 package io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.handlers;
 
-import io.fireflysoftware.core.lending.servicing.sdk.api.LoanRepaymentScheduleApi;
 import io.fireflysoftware.core.lending.servicing.sdk.api.LoanServicingCaseApi;
-import io.fireflysoftware.core.lending.servicing.sdk.model.LoanRepaymentScheduleDTO;
 import io.fireflysoftware.core.lending.servicing.sdk.model.LoanServicingCaseDTO;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.CalendarTerms;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.LoanCalendarPort;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.LoanPricePort;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.StoredInstallment;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.GenerateAmortizationScheduleCommand;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.schedule.AmortizationScheduleCalculator;
 import org.fireflyframework.cqrs.annotations.CommandHandlerComponent;
 import org.fireflyframework.cqrs.command.CommandHandler;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,62 +37,55 @@ import java.util.UUID;
 public class GenerateAmortizationScheduleHandler extends CommandHandler<GenerateAmortizationScheduleCommand, List<UUID>> {
 
     private final LoanServicingCaseApi loanServicingCaseApi;
-    private final LoanRepaymentScheduleApi loanRepaymentScheduleApi;
+    private final LoanPricePort prices;
+    private final LoanCalendarPort calendars;
 
     public GenerateAmortizationScheduleHandler(
             LoanServicingCaseApi loanServicingCaseApi,
-            LoanRepaymentScheduleApi loanRepaymentScheduleApi) {
+            LoanPricePort prices,
+            LoanCalendarPort calendars) {
         this.loanServicingCaseApi = loanServicingCaseApi;
-        this.loanRepaymentScheduleApi = loanRepaymentScheduleApi;
+        this.prices = prices;
+        this.calendars = calendars;
     }
 
     @Override
     protected Mono<List<UUID>> doHandle(GenerateAmortizationScheduleCommand cmd) {
-        return loanServicingCaseApi.getServicingCaseById(cmd.loanServicingCaseId(), UUID.randomUUID().toString())
-                .flatMap(loan -> createRows(cmd, loan));
+        return loanServicingCaseApi.getServicingCaseById(cmd.loanServicingCaseId(), key())
+                .flatMap(loan -> priceAndStore(cmd, loan));
     }
 
-    private Mono<List<UUID>> createRows(GenerateAmortizationScheduleCommand cmd, LoanServicingCaseDTO loan) {
-        if (loan.getLoanTerm() == null || loan.getPrincipalAmount() == null || loan.getInterestRate() == null) {
-            return Mono.error(new IllegalStateException("Loan term, principal, and interest rate are required"));
+    private Mono<List<UUID>> priceAndStore(GenerateAmortizationScheduleCommand cmd, LoanServicingCaseDTO loan) {
+        if (loan.getLoanTerm() == null || loan.getPrincipalAmount() == null || loan.getProductId() == null) {
+            return Mono.error(new IllegalStateException("Loan term, principal, and product id are required"));
         }
-        String frequency = loan.getPaymentFrequency() == null ? "MONTHLY" : loan.getPaymentFrequency().getValue();
-        String method = loan.getAmortizationMethod() == null ? "EQUAL_INSTALLMENT" : loan.getAmortizationMethod().getValue();
-        LocalDate firstDue = cmd.firstDueDate();
-        if (firstDue == null) {
-            LocalDate origin = loan.getOriginationDate() == null ? LocalDate.now() : loan.getOriginationDate();
-            firstDue = AmortizationScheduleCalculator.addPeriod(origin, frequency);
-        }
-        var installments = AmortizationScheduleCalculator.generate(
-                loan.getPrincipalAmount(),
-                loan.getInterestRate(),
-                loan.getLoanTerm(),
-                frequency,
-                method,
-                firstDue);
-        List<UUID> created = new ArrayList<>();
-        return Flux.fromIterable(installments)
-                .concatMap(installment -> {
-                    LoanRepaymentScheduleDTO row = new LoanRepaymentScheduleDTO();
-                    row.setLoanServicingCaseId(cmd.loanServicingCaseId());
-                    row.setInstallmentNumber(installment.number());
-                    row.setDueDate(installment.dueDate());
-                    row.setPrincipalDue(installment.principalDue());
-                    row.setInterestDue(installment.interestDue());
-                    row.setFeeDue(installment.feeDue());
-                    row.setTotalDue(installment.totalDue());
-                    row.setIsPaid(false);
-                    return loanRepaymentScheduleApi.createRepaymentSchedule(
-                                    cmd.loanServicingCaseId(), row, UUID.randomUUID().toString())
-                            .map(saved -> {
-                                created.add(saved.getLoanRepaymentScheduleId());
-                                return saved.getLoanRepaymentScheduleId();
-                            });
-                })
-                .collectList()
-                .onErrorResume(error -> Flux.fromIterable(created)
-                        .concatMap(id -> loanRepaymentScheduleApi.deleteRepaymentSchedule(
-                                cmd.loanServicingCaseId(), id, UUID.randomUUID().toString()).onErrorResume(ignored -> Mono.empty()))
-                        .then(Mono.error(error)));
+        return prices.price(loan.getPrincipalAmount(), loan.getLoanTerm(), loan.getProductId())
+                .flatMap(price -> {
+                    loan.setInterestRate(price.annualRatePercent());
+                    String frequency = loan.getPaymentFrequency() == null ? "MONTHLY" : loan.getPaymentFrequency().getValue();
+                    String method = loan.getAmortizationMethod() == null
+                            ? "EQUAL_INSTALLMENT"
+                            : loan.getAmortizationMethod().getValue();
+                    LocalDate firstDue = cmd.firstDueDate();
+                    if (firstDue == null) {
+                        LocalDate origin = loan.getOriginationDate() == null ? LocalDate.now() : loan.getOriginationDate();
+                        firstDue = AmortizationScheduleCalculator.addPeriod(origin, frequency);
+                    }
+                    CalendarTerms terms = new CalendarTerms(
+                            loan.getPrincipalAmount(),
+                            price.annualRatePercent(),
+                            loan.getLoanTerm(),
+                            frequency,
+                            method,
+                            firstDue,
+                            price.installmentAmount());
+                    return loanServicingCaseApi.updateServicingCase(cmd.loanServicingCaseId(), loan, key())
+                            .then(calendars.store(cmd.loanServicingCaseId(), terms))
+                            .map(rows -> rows.stream().map(StoredInstallment::id).toList());
+                });
+    }
+
+    private static String key() {
+        return UUID.randomUUID().toString();
     }
 }

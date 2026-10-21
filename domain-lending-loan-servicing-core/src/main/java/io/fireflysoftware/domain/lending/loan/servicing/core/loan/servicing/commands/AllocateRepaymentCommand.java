@@ -36,7 +36,9 @@ public record AllocateRepaymentCommand(
             UUID newBalanceId,
             UUID previousBalanceId,
             List<LoanRepaymentScheduleDTO> removedSchedules,
-            List<UUID> createdScheduleIds
+            List<UUID> createdScheduleIds,
+            UUID ledgerPostingId,
+            LoanRepaymentScheduleDTO paidInstallment
     ) {
     }
 }

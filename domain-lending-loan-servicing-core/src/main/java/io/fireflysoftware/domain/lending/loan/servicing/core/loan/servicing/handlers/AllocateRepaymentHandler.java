@@ -27,6 +27,9 @@ import io.fireflysoftware.core.lending.servicing.sdk.model.LoanBalanceDTO;
 import io.fireflysoftware.core.lending.servicing.sdk.model.LoanRepaymentRecordDTO;
 import io.fireflysoftware.core.lending.servicing.sdk.model.LoanRepaymentScheduleDTO;
 import io.fireflysoftware.core.lending.servicing.sdk.model.LoanServicingCaseDTO;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.CashMovement;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.LedgerPort;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.LoanPricePort;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.AllocateRepaymentCommand;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.schedule.AmortizationScheduleCalculator;
 import org.fireflyframework.cqrs.annotations.CommandHandlerComponent;
@@ -47,16 +50,25 @@ public class AllocateRepaymentHandler extends CommandHandler<AllocateRepaymentCo
     private final LoanBalanceApi balanceApi;
     private final LoanRepaymentScheduleApi scheduleApi;
     private final LoanServicingCaseApi servicingCaseApi;
+    private final LedgerPort ledger;
+    private final LoanPricePort prices;
+
+    private static final UUID CASH_ACCOUNT = UUID.fromString("00000000-0000-4000-8000-000000000021");
+    private static final UUID RECEIVABLE_ACCOUNT = UUID.fromString("00000000-0000-4000-8000-000000000022");
 
     public AllocateRepaymentHandler(
             LoanRepaymentRecordApi repaymentRecordApi,
             LoanBalanceApi balanceApi,
             LoanRepaymentScheduleApi scheduleApi,
-            LoanServicingCaseApi servicingCaseApi) {
+            LoanServicingCaseApi servicingCaseApi,
+            LedgerPort ledger,
+            LoanPricePort prices) {
         this.repaymentRecordApi = repaymentRecordApi;
         this.balanceApi = balanceApi;
         this.scheduleApi = scheduleApi;
         this.servicingCaseApi = servicingCaseApi;
+        this.ledger = ledger;
+        this.prices = prices;
     }
 
     @Override
@@ -74,18 +86,82 @@ public class AllocateRepaymentHandler extends CommandHandler<AllocateRepaymentCo
                 .flatMap(page -> {
                     LoanBalanceDTO current = currentBalance(page == null ? null : page.getContent());
                     return repaymentRecordApi.createRepaymentRecord(cmd.loanServicingCaseId(), repayment, key())
-                            .flatMap(saved -> applyBalance(cmd, saved.getLoanRepaymentRecordId(), current, repayment));
+                            .flatMap(saved -> markInstallmentPaid(cmd, repayment)
+                                    .onErrorResume(error -> deleteRepayment(cmd.loanServicingCaseId(), saved.getLoanRepaymentRecordId())
+                                            .then(Mono.error(error)))
+                                    .flatMap(paid -> postCash(cmd, repayment)
+                                            .onErrorResume(error -> restoreInstallment(cmd.loanServicingCaseId(), paid)
+                                                    .then(deleteRepayment(cmd.loanServicingCaseId(), saved.getLoanRepaymentRecordId()))
+                                                    .then(Mono.error(error)))
+                                            .flatMap(postingId -> applyBalance(
+                                                    cmd, saved.getLoanRepaymentRecordId(), current, repayment, postingId, paid)
+                                                    .onErrorResume(error -> ledger.reverse(postingId)
+                                                            .then(restoreInstallment(cmd.loanServicingCaseId(), paid))
+                                                            .then(deleteRepayment(cmd.loanServicingCaseId(), saved.getLoanRepaymentRecordId()))
+                                                            .then(Mono.error(error))))));
                 });
+    }
+
+    private Mono<LoanRepaymentScheduleDTO> markInstallmentPaid(AllocateRepaymentCommand cmd, LoanRepaymentRecordDTO repayment) {
+        return scheduleApi.findAllRepaymentSchedules(cmd.loanServicingCaseId(), new FilterRequestLoanRepaymentScheduleDTO(), null)
+                .flatMap(page -> {
+                    LoanRepaymentScheduleDTO due = earliestUnpaid(page == null ? null : page.getContent());
+                    if (due == null) {
+                        return Mono.just(new LoanRepaymentScheduleDTO());
+                    }
+                    LoanRepaymentScheduleDTO before = copySchedule(due);
+                    due.setIsPaid(true);
+                    due.setPaidDate(repayment.getPaymentDate());
+                    due.setPaidAmount(repayment.getPaymentAmount());
+                    return scheduleApi.updateRepaymentSchedule(
+                                    cmd.loanServicingCaseId(), due.getLoanRepaymentScheduleId(), due, key())
+                            .thenReturn(before);
+                });
+    }
+
+    private Mono<UUID> postCash(AllocateRepaymentCommand cmd, LoanRepaymentRecordDTO repayment) {
+        return servicingCaseApi.getServicingCaseById(cmd.loanServicingCaseId(), key())
+                .flatMap(loan -> {
+                    if (loan.getProductId() == null || loan.getPrincipalAmount() == null || loan.getLoanTerm() == null) {
+                        return Mono.error(new IllegalStateException("Principal, term, and product id are required"));
+                    }
+                    return prices.price(loan.getPrincipalAmount(), loan.getLoanTerm(), loan.getProductId());
+                })
+                .flatMap(price -> ledger.post(new CashMovement(
+                        repayment.getPaymentAmount(),
+                        price.currency(),
+                        repayment.getTransactionId().toString(),
+                        CASH_ACCOUNT,
+                        RECEIVABLE_ACCOUNT)));
+    }
+
+    private Mono<Void> deleteRepayment(UUID caseId, UUID repaymentId) {
+        if (repaymentId == null) {
+            return Mono.empty();
+        }
+        return repaymentRecordApi.deleteRepaymentRecord(caseId, repaymentId, key()).onErrorResume(ignored -> Mono.empty());
+    }
+
+    private Mono<Void> restoreInstallment(UUID caseId, LoanRepaymentScheduleDTO before) {
+        if (before == null || before.getLoanRepaymentScheduleId() == null) {
+            return Mono.empty();
+        }
+        return scheduleApi.updateRepaymentSchedule(caseId, before.getLoanRepaymentScheduleId(), before, key()).then();
     }
 
     private Mono<AllocateRepaymentCommand.Allocation> applyBalance(
             AllocateRepaymentCommand cmd,
             UUID repaymentId,
             LoanBalanceDTO current,
-            LoanRepaymentRecordDTO repayment) {
+            LoanRepaymentRecordDTO repayment,
+            UUID ledgerPostingId,
+            LoanRepaymentScheduleDTO paidInstallment) {
+        LoanRepaymentScheduleDTO paid = paidInstallment != null && paidInstallment.getLoanRepaymentScheduleId() != null
+                ? paidInstallment
+                : null;
         if (current == null) {
             return Mono.just(new AllocateRepaymentCommand.Allocation(
-                    cmd.loanServicingCaseId(), repaymentId, null, null, List.of(), List.of()));
+                    cmd.loanServicingCaseId(), repaymentId, null, null, List.of(), List.of(), ledgerPostingId, paid));
         }
         BigDecimal remainingPayment = nz(repayment.getPaymentAmount());
         BigDecimal interest = nz(current.getInterestOutstanding());
@@ -123,7 +199,9 @@ public class AllocateRepaymentHandler extends CommandHandler<AllocateRepaymentCo
                                 created.getLoanBalanceId(),
                                 current.getLoanBalanceId(),
                                 schedules.removed(),
-                                schedules.created()))
+                                schedules.created(),
+                                ledgerPostingId,
+                                paid))
                         .onErrorResume(error -> balanceApi.deleteBalance(
                                         cmd.loanServicingCaseId(), created.getLoanBalanceId(), key())
                                 .then(repaymentRecordApi.deleteRepaymentRecord(cmd.loanServicingCaseId(), repaymentId, key()))
@@ -196,6 +274,37 @@ public class AllocateRepaymentHandler extends CommandHandler<AllocateRepaymentCo
                 .onErrorResume(error -> Flux.fromIterable(created)
                         .concatMap(id -> scheduleApi.deleteRepaymentSchedule(caseId, id, key()).onErrorResume(ignored -> Mono.empty()))
                         .then(Mono.error(error)));
+    }
+
+    private static LoanRepaymentScheduleDTO earliestUnpaid(List<LoanRepaymentScheduleDTO> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return null;
+        }
+        LoanRepaymentScheduleDTO earliest = null;
+        for (LoanRepaymentScheduleDTO row : rows) {
+            if (Boolean.TRUE.equals(row.getIsPaid()) || row.getDueDate() == null) {
+                continue;
+            }
+            if (earliest == null || row.getDueDate().isBefore(earliest.getDueDate())) {
+                earliest = row;
+            }
+        }
+        return earliest;
+    }
+
+    private static LoanRepaymentScheduleDTO copySchedule(LoanRepaymentScheduleDTO source) {
+        LoanRepaymentScheduleDTO copy = new LoanRepaymentScheduleDTO(source.getLoanRepaymentScheduleId());
+        copy.setLoanServicingCaseId(source.getLoanServicingCaseId());
+        copy.setInstallmentNumber(source.getInstallmentNumber());
+        copy.setDueDate(source.getDueDate());
+        copy.setPrincipalDue(source.getPrincipalDue());
+        copy.setInterestDue(source.getInterestDue());
+        copy.setFeeDue(source.getFeeDue());
+        copy.setTotalDue(source.getTotalDue());
+        copy.setIsPaid(source.getIsPaid());
+        copy.setPaidDate(source.getPaidDate());
+        copy.setPaidAmount(source.getPaidAmount());
+        return copy;
     }
 
     private static LoanBalanceDTO currentBalance(List<LoanBalanceDTO> balances) {
