@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.fireflysoftware</groupId>
         <artifactId>domain-lending-loan-servicing</artifactId>
-        <version>26.10.4</version>
+        <version>26.10.5</version>
     </parent>
 
     <artifactId>domain-lending-loan-servicing-core</artifactId>
@@ -33,17 +33,17 @@
         <dependency>
             <groupId>io.fireflysoftware</groupId>
             <artifactId>core-banking-ledger-sdk</artifactId>
-            <version>26.10.4</version>
+            <version>26.10.5</version>
         </dependency>
         <dependency>
             <groupId>io.fireflysoftware</groupId>
             <artifactId>core-common-product-mgmt-sdk</artifactId>
-            <version>26.10.4</version>
+            <version>26.10.5</version>
         </dependency>
         <dependency>
             <groupId>io.fireflysoftware</groupId>
             <artifactId>core-common-accounting-gl-sdk</artifactId>
-            <version>26.10.4</version>
+            <version>26.10.5</version>
         </dependency>
 
         <!-- Common Libraries -->
