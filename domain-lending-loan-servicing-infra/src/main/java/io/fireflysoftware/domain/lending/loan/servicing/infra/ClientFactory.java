@@ -32,6 +32,7 @@ import io.fireflysoftware.core.lending.servicing.sdk.api.LoanRepaymentScheduleAp
 import io.fireflysoftware.core.lending.servicing.sdk.api.LoanRestructuringApi;
 import io.fireflysoftware.core.lending.servicing.sdk.api.LoanServicingCaseApi;
 import io.fireflysoftware.core.lending.servicing.sdk.api.LoanServicingEventApi;
+import io.fireflysoftware.core.lending.servicing.sdk.api.SyndicatedFacilityApi;
 import io.fireflysoftware.core.lending.servicing.sdk.invoker.ApiClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -126,6 +127,11 @@ public class ClientFactory {
     @Bean
     public LoanNotificationApi loanNotificationApi(){
         return new LoanNotificationApi(apiClient);
+    }
+
+    @Bean
+    public SyndicatedFacilityApi syndicatedFacilityApi() {
+        return new SyndicatedFacilityApi(apiClient);
     }
 
 }

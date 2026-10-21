@@ -8,6 +8,8 @@ servers:
 tags:
 - name: Loan Servicing Queries
   description: Query endpoints for loan servicing case data
+- name: SyndicatedFacility
+  description: Borrower view of a syndicated facility and its repayment
 - name: Loan Servicing
   description: CQ queries and registration for Loan Servicing
 paths:
@@ -72,6 +74,39 @@ paths:
             '*/*':
               schema:
                 type: object
+  /api/v1/loans/{loanId}/syndicated-facility/repayments:
+    post:
+      tags:
+      - SyndicatedFacility
+      summary: Allocate a repayment and submit it through payments
+      operationId: repaySyndicatedFacility
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AllocateSyndicateRepaymentCommand"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SyndicatePaymentReceipt"
   /api/v1/loans/{loanId}/schedule:
     post:
       tags:
@@ -627,6 +662,33 @@ paths:
             '*/*':
               schema:
                 type: object
+  /api/v1/loans/{loanId}/syndicated-facility:
+    get:
+      tags:
+      - SyndicatedFacility
+      summary: Borrower view of the syndicated facility
+      operationId: viewSyndicatedFacility
+      parameters:
+      - name: loanId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BorrowerFacilityView"
   /api/v1/loan-servicing/cases/{caseId}/schedule:
     get:
       tags:
@@ -1046,6 +1108,7 @@ components:
         loanAccrualId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
@@ -1063,12 +1126,15 @@ components:
           format: date
         note:
           type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
+          nullable: true
     RegisterLoanDisbursementCommand:
       required:
       - disbursementAmount
@@ -1083,6 +1149,7 @@ components:
         loanDisbursementId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
@@ -1112,25 +1179,37 @@ components:
         paymentProviderId:
           type: string
           format: uuid
+          nullable: true
         distributorId:
           type: string
           format: uuid
+          nullable: true
         distributorAgencyId:
           type: string
           format: uuid
+          nullable: true
         distributorAgentId:
           type: string
           format: uuid
+          nullable: true
         externalTransactionReference:
           type: string
+          nullable: true
         note:
           type: string
+          nullable: true
+        facilityId:
+          type: string
+          format: uuid
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
+          nullable: true
     RegisterLoanRateChangeCommand:
       required:
       - effectiveDate
@@ -1143,6 +1222,7 @@ components:
         loanRateChangeId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
@@ -1162,12 +1242,15 @@ components:
           - PROMOTION
         note:
           type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
+          nullable: true
     RegisterLoanRepaymentRecordCommand:
       required:
       - isPartialPayment
@@ -1180,12 +1263,14 @@ components:
         loanRepaymentRecordId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
         loanRepaymentScheduleId:
           type: string
           format: uuid
+          nullable: true
         transactionId:
           type: string
           format: uuid
@@ -1198,12 +1283,15 @@ components:
           type: boolean
         note:
           type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
+          nullable: true
     RegisterLoanRepaymentScheduleCommand:
       required:
       - dueDate
@@ -1219,6 +1307,7 @@ components:
         loanRepaymentScheduleId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
@@ -1241,14 +1330,18 @@ components:
         paidDate:
           type: string
           format: date
+          nullable: true
         paidAmount:
           type: number
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
+          nullable: true
     RegisterLoanServicingCaseCommand:
       required:
       - amortizationMethod
@@ -1271,6 +1364,7 @@ components:
         loanServicingCaseId:
           type: string
           format: uuid
+          nullable: true
         contractId:
           type: string
           format: uuid
@@ -1283,6 +1377,7 @@ components:
         proposedOfferId:
           type: string
           format: uuid
+          nullable: true
         productCatalogId:
           type: string
           format: uuid
@@ -1362,12 +1457,15 @@ components:
           format: date
         remarks:
           type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
+          nullable: true
     RegisterLoanServicingEventCommand:
       required:
       - description
@@ -1379,6 +1477,7 @@ components:
         loanServicingEventId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
@@ -1398,9 +1497,11 @@ components:
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
+          nullable: true
     SubmitLoanCaseCommand:
       type: object
       properties:
@@ -1420,100 +1521,53 @@ components:
           $ref: "#/components/schemas/RegisterLoanServicingEventCommand"
     WriteBackCommand:
       type: object
+      properties:
+        reason:
+          type: string
+    AllocateSyndicateRepaymentCommand:
+      type: object
+      properties:
+        caseId:
+          type: string
+          format: uuid
+        facilityId:
+          type: string
+          format: uuid
+        repaymentId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        currency:
+          type: string
+        idempotencyKey:
+          type: string
+    SyndicatePaymentReceipt:
+      type: object
+      properties:
+        caseId:
+          type: string
+          format: uuid
+        facilityId:
+          type: string
+          format: uuid
+        allocationId:
+          type: string
+          format: uuid
+        paymentId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        currency:
+          type: string
     GenerateScheduleCommand:
       type: object
+      properties:
+        firstDueDate:
+          type: string
+          format: date
     ApplyRestructureCommand:
-      type: object
-    ApplyRepaymentCommand:
-      type: object
-    SetFixedRateCommand:
-      type: object
-    ApplyPrepaymentCommand:
-      type: object
-    GeneratePenaltiesCommand:
-      type: object
-    GrantPaymentHolidayCommand:
-      type: object
-    EndPaymentHolidayCommand:
-      type: object
-    CapitalizeInterestCommand:
-      type: object
-    AccrueInterestCommand:
-      type: object
-    ChangeReferenceIndexCommand:
-      type: object
-    DisburseCommand:
-      type: object
-    CloseLoanCommand:
-      type: object
-    ChargeOffCommand:
-      type: object
-    NormalizeArrearsCommand:
-      type: object
-    MarkInArrearsCommand:
-      type: object
-    LoanRepaymentScheduleDTO:
-      required:
-      - dueDate
-      - feeDue
-      - installmentNumber
-      - interestDue
-      - isPaid
-      - loanServicingCaseId
-      - principalDue
-      - totalDue
-      type: object
-      properties:
-        loanRepaymentScheduleId:
-          type: string
-          format: uuid
-        loanServicingCaseId:
-          type: string
-          format: uuid
-        installmentNumber:
-          type: integer
-          format: int32
-        dueDate:
-          type: string
-          format: date
-        principalDue:
-          type: number
-        interestDue:
-          type: number
-        feeDue:
-          type: number
-        totalDue:
-          type: number
-        isPaid:
-          type: boolean
-        paidDate:
-          type: string
-          format: date
-        paidAmount:
-          type: number
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    PaginationResponseLoanRepaymentScheduleDTO:
-      type: object
-      properties:
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/LoanRepaymentScheduleDTO"
-        totalElements:
-          type: integer
-          format: int64
-        totalPages:
-          type: integer
-          format: int32
-        currentPage:
-          type: integer
-          format: int32
-    LoanRestructuringDTO:
       required:
       - loanServicingCaseId
       - newAmortizationMethod
@@ -1541,6 +1595,7 @@ components:
         loanRestructuringId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
@@ -1660,31 +1715,19 @@ components:
         approvedBy:
           type: string
           format: uuid
+          nullable: true
         remarks:
           type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
-    PaginationResponseLoanRestructuringDTO:
-      type: object
-      properties:
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/LoanRestructuringDTO"
-        totalElements:
-          type: integer
-          format: int64
-        totalPages:
-          type: integer
-          format: int32
-        currentPage:
-          type: integer
-          format: int32
-    LoanRepaymentRecordDTO:
+          nullable: true
+    ApplyRepaymentCommand:
       required:
       - isPartialPayment
       - loanServicingCaseId
@@ -1696,12 +1739,14 @@ components:
         loanRepaymentRecordId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
         loanRepaymentScheduleId:
           type: string
           format: uuid
+          nullable: true
         transactionId:
           type: string
           format: uuid
@@ -1714,45 +1759,16 @@ components:
           type: boolean
         note:
           type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
-    PaginationResponseLoanRepaymentRecordDTO:
-      type: object
-      properties:
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/LoanRepaymentRecordDTO"
-        totalElements:
-          type: integer
-          format: int64
-        totalPages:
-          type: integer
-          format: int32
-        currentPage:
-          type: integer
-          format: int32
-    PaginationResponse:
-      type: object
-      properties:
-        content:
-          type: array
-          items:
-            type: object
-        totalElements:
-          type: integer
-          format: int64
-        totalPages:
-          type: integer
-          format: int32
-        currentPage:
-          type: integer
-          format: int32
-    LoanRateChangeDTO:
+          nullable: true
+    SetFixedRateCommand:
       required:
       - effectiveDate
       - loanServicingCaseId
@@ -1764,6 +1780,7 @@ components:
         loanRateChangeId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
@@ -1783,48 +1800,35 @@ components:
           - PROMOTION
         note:
           type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
-    PaginationResponseLoanRateChangeDTO:
-      type: object
-      properties:
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/LoanRateChangeDTO"
-        totalElements:
-          type: integer
-          format: int64
-        totalPages:
-          type: integer
-          format: int32
-        currentPage:
-          type: integer
-          format: int32
-    LoanInstallmentRecordDTO:
+          nullable: true
+    ApplyPrepaymentCommand:
       required:
       - isPartialPayment
       - loanServicingCaseId
       - paymentAmount
       - paymentDate
-      - paymentMethod
-      - paymentStatus
       - transactionId
       type: object
       properties:
-        loanInstallmentRecordId:
+        loanRepaymentRecordId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
-        loanInstallmentPlanId:
+        loanRepaymentScheduleId:
           type: string
           format: uuid
+          nullable: true
         transactionId:
           type: string
           format: uuid
@@ -1835,176 +1839,151 @@ components:
           format: date
         isPartialPayment:
           type: boolean
-        paymentMethod:
-          type: string
-          enum:
-          - INTERNAL
-          - EXTERNAL
-        paymentStatus:
-          type: string
-          enum:
-          - PENDING
-          - PROCESSING
-          - COMPLETED
-          - FAILED
-          - REVERSED
-        paymentProviderId:
-          type: string
-          format: uuid
-        externalTransactionReference:
-          type: string
         note:
           type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
-    PaginationResponseLoanInstallmentRecordDTO:
-      type: object
-      properties:
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/LoanInstallmentRecordDTO"
-        totalElements:
-          type: integer
-          format: int64
-        totalPages:
-          type: integer
-          format: int32
-        currentPage:
-          type: integer
-          format: int32
-    LoanInstallmentPlanDTO:
+          nullable: true
+    GeneratePenaltiesCommand:
       required:
-      - dueDate
-      - feeDue
-      - installmentNumber
-      - interestDue
-      - isAutomaticPayment
-      - isPaid
+      - accrualAmount
+      - accrualDate
+      - accrualType
       - loanServicingCaseId
-      - paymentMethod
-      - principalDue
-      - totalDue
       type: object
       properties:
-        loanInstallmentPlanId:
+        loanAccrualId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
-        installmentNumber:
-          type: integer
-          format: int32
-        dueDate:
-          type: string
-          format: date
-        principalDue:
+        accrualAmount:
           type: number
-        interestDue:
-          type: number
-        feeDue:
-          type: number
-        totalDue:
-          type: number
-        isPaid:
-          type: boolean
-        paidDate:
-          type: string
-          format: date
-        paidAmount:
-          type: number
-        paymentMethod:
+        accrualType:
           type: string
           enum:
-          - INTERNAL
-          - EXTERNAL
-        paymentAccountId:
+          - INTEREST
+          - PENALTY
+          - LATE_FEE
+          - SERVICING_FEE
+        accrualDate:
           type: string
-          format: uuid
-        paymentProviderId:
+          format: date
+        note:
           type: string
-          format: uuid
-        externalAccountReference:
-          type: string
-        isAutomaticPayment:
-          type: boolean
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
-    PaginationResponseLoanInstallmentPlanDTO:
+          nullable: true
+    GrantPaymentHolidayCommand:
       type: object
       properties:
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/LoanInstallmentPlanDTO"
-        totalElements:
-          type: integer
-          format: int64
-        totalPages:
-          type: integer
-          format: int32
-        currentPage:
-          type: integer
-          format: int32
-    LoanServicingEventDTO:
-      required:
-      - description
-      - eventDate
-      - eventType
-      - loanServicingCaseId
-      type: object
-      properties:
-        loanServicingEventId:
-          type: string
-          format: uuid
-        loanServicingCaseId:
-          type: string
-          format: uuid
-        eventType:
-          type: string
-          enum:
-          - RESTRUCTURE
-          - EXTENSION
-          - DEFERMENT
-          - COLLECTION_CALL
-          - NOTICE
-        eventDate:
-          type: string
-          format: date
         description:
           type: string
+    EndPaymentHolidayCommand:
+      type: object
+      properties:
+        description:
+          type: string
+    CapitalizeInterestCommand:
+      type: object
+      properties:
+        capitalizationDate:
+          type: string
+          format: date
+    AccrueInterestCommand:
+      required:
+      - accrualAmount
+      - accrualDate
+      - accrualType
+      - loanServicingCaseId
+      type: object
+      properties:
+        loanAccrualId:
+          type: string
+          format: uuid
+          nullable: true
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        accrualAmount:
+          type: number
+        accrualType:
+          type: string
+          enum:
+          - INTEREST
+          - PENALTY
+          - LATE_FEE
+          - SERVICING_FEE
+        accrualDate:
+          type: string
+          format: date
+        note:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
-    PaginationResponseLoanServicingEventDTO:
+          nullable: true
+    ChangeReferenceIndexCommand:
+      required:
+      - effectiveDate
+      - loanServicingCaseId
+      - newInterestRate
+      - oldInterestRate
+      - reasonCode
       type: object
       properties:
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/LoanServicingEventDTO"
-        totalElements:
-          type: integer
-          format: int64
-        totalPages:
-          type: integer
-          format: int32
-        currentPage:
-          type: integer
-          format: int32
-    LoanDisbursementDTO:
+        loanRateChangeId:
+          type: string
+          format: uuid
+          nullable: true
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        oldInterestRate:
+          type: number
+        newInterestRate:
+          type: number
+        effectiveDate:
+          type: string
+          format: date
+        reasonCode:
+          type: string
+          enum:
+          - INDEX_ADJUSTMENT
+          - RENEGOTIATION
+          - PENALTY
+          - PROMOTION
+        note:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    DisburseCommand:
       required:
       - disbursementAmount
       - disbursementDate
@@ -2018,6 +1997,7 @@ components:
         loanDisbursementId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
@@ -2047,41 +2027,788 @@ components:
         paymentProviderId:
           type: string
           format: uuid
+          nullable: true
         distributorId:
           type: string
           format: uuid
+          nullable: true
         distributorAgencyId:
           type: string
           format: uuid
+          nullable: true
         distributorAgentId:
           type: string
           format: uuid
+          nullable: true
         externalTransactionReference:
           type: string
+          nullable: true
         note:
+          type: string
+          nullable: true
+        facilityId:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    CloseLoanCommand:
+      type: object
+      properties:
+        reason:
+          type: string
+    ChargeOffCommand:
+      type: object
+      properties:
+        reason:
+          type: string
+    NormalizeArrearsCommand:
+      type: object
+      properties:
+        reason:
+          type: string
+    MarkInArrearsCommand:
+      type: object
+      properties:
+        reason:
+          type: string
+    BorrowerFacilityView:
+      type: object
+      properties:
+        facilityId:
+          type: string
+          format: uuid
+        loanId:
+          type: string
+          format: uuid
+        currency:
+          type: string
+        commitmentAmount:
+          type: number
+        status:
+          type: string
+    LoanRepaymentScheduleDTO:
+      required:
+      - dueDate
+      - feeDue
+      - installmentNumber
+      - interestDue
+      - isPaid
+      - loanServicingCaseId
+      - principalDue
+      - totalDue
+      type: object
+      properties:
+        loanRepaymentScheduleId:
+          type: string
+          format: uuid
+          nullable: true
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        installmentNumber:
+          type: integer
+          format: int32
+        dueDate:
+          type: string
+          format: date
+        principalDue:
+          type: number
+        interestDue:
+          type: number
+        feeDue:
+          type: number
+        totalDue:
+          type: number
+        isPaid:
+          type: boolean
+        paidDate:
+          type: string
+          format: date
+          nullable: true
+        paidAmount:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    PaginationResponseLoanRepaymentScheduleDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/LoanRepaymentScheduleDTO"
+        totalElements:
+          type: integer
+          format: int64
+          nullable: true
+        totalPages:
+          type: integer
+          format: int32
+          nullable: true
+        currentPage:
+          type: integer
+          format: int32
+          nullable: true
+    LoanRestructuringDTO:
+      required:
+      - loanServicingCaseId
+      - newAmortizationMethod
+      - newCompoundingFrequency
+      - newDayCountConvention
+      - newInterestCalculationMethod
+      - newInterestRate
+      - newLoanTerm
+      - newMaturityDate
+      - newPaymentFrequency
+      - newPrincipalAmount
+      - oldAmortizationMethod
+      - oldCompoundingFrequency
+      - oldDayCountConvention
+      - oldInterestCalculationMethod
+      - oldInterestRate
+      - oldLoanTerm
+      - oldMaturityDate
+      - oldPaymentFrequency
+      - oldPrincipalAmount
+      - reason
+      - restructuringDate
+      type: object
+      properties:
+        loanRestructuringId:
+          type: string
+          format: uuid
+          nullable: true
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        restructuringDate:
+          type: string
+          format: date
+        reason:
+          type: string
+        oldPrincipalAmount:
+          type: number
+        oldInterestRate:
+          type: number
+        oldLoanTerm:
+          type: integer
+          format: int32
+        oldInterestCalculationMethod:
+          type: string
+          enum:
+          - SIMPLE
+          - COMPOUND
+          - ACTUARIAL
+          - REDUCING_BALANCE
+          - FLAT_RATE
+        oldAmortizationMethod:
+          type: string
+          enum:
+          - EQUAL_INSTALLMENT
+          - EQUAL_PRINCIPAL
+          - BALLOON_PAYMENT
+          - INTEREST_ONLY
+          - BULLET
+        oldPaymentFrequency:
+          type: string
+          enum:
+          - DAILY
+          - WEEKLY
+          - BIWEEKLY
+          - SEMIMONTHLY
+          - MONTHLY
+          - BIMONTHLY
+          - QUARTERLY
+          - SEMIANNUALLY
+          - ANNUALLY
+        oldCompoundingFrequency:
+          type: string
+          enum:
+          - DAILY
+          - MONTHLY
+          - QUARTERLY
+          - SEMIANNUALLY
+          - ANNUALLY
+          - CONTINUOUS
+        oldDayCountConvention:
+          type: string
+          enum:
+          - ACTUAL_360
+          - ACTUAL_365
+          - ACTUAL_ACTUAL
+          - THIRTY_360
+        oldMaturityDate:
+          type: string
+          format: date
+        newPrincipalAmount:
+          type: number
+        newInterestRate:
+          type: number
+        newLoanTerm:
+          type: integer
+          format: int32
+        newInterestCalculationMethod:
+          type: string
+          enum:
+          - SIMPLE
+          - COMPOUND
+          - ACTUARIAL
+          - REDUCING_BALANCE
+          - FLAT_RATE
+        newAmortizationMethod:
+          type: string
+          enum:
+          - EQUAL_INSTALLMENT
+          - EQUAL_PRINCIPAL
+          - BALLOON_PAYMENT
+          - INTEREST_ONLY
+          - BULLET
+        newPaymentFrequency:
+          type: string
+          enum:
+          - DAILY
+          - WEEKLY
+          - BIWEEKLY
+          - SEMIMONTHLY
+          - MONTHLY
+          - BIMONTHLY
+          - QUARTERLY
+          - SEMIANNUALLY
+          - ANNUALLY
+        newCompoundingFrequency:
+          type: string
+          enum:
+          - DAILY
+          - MONTHLY
+          - QUARTERLY
+          - SEMIANNUALLY
+          - ANNUALLY
+          - CONTINUOUS
+        newDayCountConvention:
+          type: string
+          enum:
+          - ACTUAL_360
+          - ACTUAL_365
+          - ACTUAL_ACTUAL
+          - THIRTY_360
+        newMaturityDate:
+          type: string
+          format: date
+        approvedBy:
+          type: string
+          format: uuid
+          nullable: true
+        remarks:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    PaginationResponseLoanRestructuringDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/LoanRestructuringDTO"
+        totalElements:
+          type: integer
+          format: int64
+          nullable: true
+        totalPages:
+          type: integer
+          format: int32
+          nullable: true
+        currentPage:
+          type: integer
+          format: int32
+          nullable: true
+    LoanRepaymentRecordDTO:
+      required:
+      - isPartialPayment
+      - loanServicingCaseId
+      - paymentAmount
+      - paymentDate
+      - transactionId
+      type: object
+      properties:
+        loanRepaymentRecordId:
+          type: string
+          format: uuid
+          nullable: true
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        loanRepaymentScheduleId:
+          type: string
+          format: uuid
+          nullable: true
+        transactionId:
+          type: string
+          format: uuid
+        paymentAmount:
+          type: number
+        paymentDate:
+          type: string
+          format: date
+        isPartialPayment:
+          type: boolean
+        note:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    PaginationResponseLoanRepaymentRecordDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/LoanRepaymentRecordDTO"
+        totalElements:
+          type: integer
+          format: int64
+          nullable: true
+        totalPages:
+          type: integer
+          format: int32
+          nullable: true
+        currentPage:
+          type: integer
+          format: int32
+          nullable: true
+    PaginationResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          nullable: true
+          items:
+            type: object
+        totalElements:
+          type: integer
+          format: int64
+          nullable: true
+        totalPages:
+          type: integer
+          format: int32
+          nullable: true
+        currentPage:
+          type: integer
+          format: int32
+          nullable: true
+    LoanRateChangeDTO:
+      required:
+      - effectiveDate
+      - loanServicingCaseId
+      - newInterestRate
+      - oldInterestRate
+      - reasonCode
+      type: object
+      properties:
+        loanRateChangeId:
+          type: string
+          format: uuid
+          nullable: true
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        oldInterestRate:
+          type: number
+        newInterestRate:
+          type: number
+        effectiveDate:
+          type: string
+          format: date
+        reasonCode:
+          type: string
+          enum:
+          - INDEX_ADJUSTMENT
+          - RENEGOTIATION
+          - PENALTY
+          - PROMOTION
+        note:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    PaginationResponseLoanRateChangeDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/LoanRateChangeDTO"
+        totalElements:
+          type: integer
+          format: int64
+          nullable: true
+        totalPages:
+          type: integer
+          format: int32
+          nullable: true
+        currentPage:
+          type: integer
+          format: int32
+          nullable: true
+    LoanInstallmentRecordDTO:
+      required:
+      - isPartialPayment
+      - loanServicingCaseId
+      - paymentAmount
+      - paymentDate
+      - paymentMethod
+      - paymentStatus
+      - transactionId
+      type: object
+      properties:
+        loanInstallmentRecordId:
+          type: string
+          format: uuid
+          nullable: true
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        loanInstallmentPlanId:
+          type: string
+          format: uuid
+          nullable: true
+        transactionId:
+          type: string
+          format: uuid
+        paymentAmount:
+          type: number
+        paymentDate:
+          type: string
+          format: date
+        isPartialPayment:
+          type: boolean
+        paymentMethod:
+          type: string
+          enum:
+          - INTERNAL
+          - EXTERNAL
+        paymentStatus:
+          type: string
+          enum:
+          - PENDING
+          - PROCESSING
+          - COMPLETED
+          - FAILED
+          - REVERSED
+        paymentProviderId:
+          type: string
+          format: uuid
+          nullable: true
+        externalTransactionReference:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    PaginationResponseLoanInstallmentRecordDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/LoanInstallmentRecordDTO"
+        totalElements:
+          type: integer
+          format: int64
+          nullable: true
+        totalPages:
+          type: integer
+          format: int32
+          nullable: true
+        currentPage:
+          type: integer
+          format: int32
+          nullable: true
+    LoanInstallmentPlanDTO:
+      required:
+      - dueDate
+      - feeDue
+      - installmentNumber
+      - interestDue
+      - isAutomaticPayment
+      - isPaid
+      - loanServicingCaseId
+      - paymentMethod
+      - principalDue
+      - totalDue
+      type: object
+      properties:
+        loanInstallmentPlanId:
+          type: string
+          format: uuid
+          nullable: true
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        installmentNumber:
+          type: integer
+          format: int32
+        dueDate:
+          type: string
+          format: date
+        principalDue:
+          type: number
+        interestDue:
+          type: number
+        feeDue:
+          type: number
+        totalDue:
+          type: number
+        isPaid:
+          type: boolean
+        paidDate:
+          type: string
+          format: date
+          nullable: true
+        paidAmount:
+          type: number
+          nullable: true
+        paymentMethod:
+          type: string
+          enum:
+          - INTERNAL
+          - EXTERNAL
+        paymentAccountId:
+          type: string
+          format: uuid
+          nullable: true
+        paymentProviderId:
+          type: string
+          format: uuid
+          nullable: true
+        externalAccountReference:
+          type: string
+          nullable: true
+        isAutomaticPayment:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    PaginationResponseLoanInstallmentPlanDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/LoanInstallmentPlanDTO"
+        totalElements:
+          type: integer
+          format: int64
+          nullable: true
+        totalPages:
+          type: integer
+          format: int32
+          nullable: true
+        currentPage:
+          type: integer
+          format: int32
+          nullable: true
+    LoanServicingEventDTO:
+      required:
+      - description
+      - eventDate
+      - eventType
+      - loanServicingCaseId
+      type: object
+      properties:
+        loanServicingEventId:
+          type: string
+          format: uuid
+          nullable: true
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum:
+          - RESTRUCTURE
+          - EXTENSION
+          - DEFERMENT
+          - COLLECTION_CALL
+          - NOTICE
+        eventDate:
+          type: string
+          format: date
+        description:
           type: string
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
+          nullable: true
+    PaginationResponseLoanServicingEventDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/LoanServicingEventDTO"
+        totalElements:
+          type: integer
+          format: int64
+          nullable: true
+        totalPages:
+          type: integer
+          format: int32
+          nullable: true
+        currentPage:
+          type: integer
+          format: int32
+          nullable: true
+    LoanDisbursementDTO:
+      required:
+      - disbursementAmount
+      - disbursementDate
+      - disbursementMethod
+      - disbursementStatus
+      - isFinalDisbursement
+      - loanServicingCaseId
+      - transactionId
+      type: object
+      properties:
+        loanDisbursementId:
+          type: string
+          format: uuid
+          nullable: true
+        loanServicingCaseId:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          format: uuid
+        disbursementAmount:
+          type: number
+        disbursementDate:
+          type: string
+          format: date
+        isFinalDisbursement:
+          type: boolean
+        disbursementMethod:
+          type: string
+          enum:
+          - INTERNAL
+          - EXTERNAL
+        disbursementStatus:
+          type: string
+          enum:
+          - PENDING
+          - PROCESSING
+          - COMPLETED
+          - FAILED
+          - REVERSED
+        paymentProviderId:
+          type: string
+          format: uuid
+          nullable: true
+        distributorId:
+          type: string
+          format: uuid
+          nullable: true
+        distributorAgencyId:
+          type: string
+          format: uuid
+          nullable: true
+        distributorAgentId:
+          type: string
+          format: uuid
+          nullable: true
+        externalTransactionReference:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        facilityId:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
     PaginationResponseLoanDisbursementDTO:
       type: object
       properties:
         content:
           type: array
+          nullable: true
           items:
             $ref: "#/components/schemas/LoanDisbursementDTO"
         totalElements:
           type: integer
           format: int64
+          nullable: true
         totalPages:
           type: integer
           format: int32
+          nullable: true
         currentPage:
           type: integer
           format: int32
+          nullable: true
     LoanBalanceDTO:
       required:
       - balanceDate
@@ -2096,6 +2823,7 @@ components:
         loanBalanceId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
@@ -2115,25 +2843,31 @@ components:
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
+          nullable: true
     PaginationResponseLoanBalanceDTO:
       type: object
       properties:
         content:
           type: array
+          nullable: true
           items:
             $ref: "#/components/schemas/LoanBalanceDTO"
         totalElements:
           type: integer
           format: int64
+          nullable: true
         totalPages:
           type: integer
           format: int32
+          nullable: true
         currentPage:
           type: integer
           format: int32
+          nullable: true
     LoanAccrualDTO:
       required:
       - accrualAmount
@@ -2145,6 +2879,7 @@ components:
         loanAccrualId:
           type: string
           format: uuid
+          nullable: true
         loanServicingCaseId:
           type: string
           format: uuid
@@ -2162,25 +2897,32 @@ components:
           format: date
         note:
           type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
+          nullable: true
         updatedAt:
           type: string
           format: date-time
+          nullable: true
     PaginationResponseLoanAccrualDTO:
       type: object
       properties:
         content:
           type: array
+          nullable: true
           items:
             $ref: "#/components/schemas/LoanAccrualDTO"
         totalElements:
           type: integer
           format: int64
+          nullable: true
         totalPages:
           type: integer
           format: int32
+          nullable: true
         currentPage:
           type: integer
           format: int32
+          nullable: true
