@@ -717,6 +717,37 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/BorrowerFacilityView"
+  /api/v1/loan-servicing/cases/{caseId}/calendar:
+    get:
+      tags:
+      - Loan Servicing Queries
+      summary: Read the amortization calendar
+      description: Read the current amortization calendar, including the remaining balance of each installment.
+      operationId: getAmortizationCalendar
+      parameters:
+      - name: caseId
+        in: path
+        description: Loan case identifier
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: X-Idempotency-Key
+        in: header
+        description: "Unique key for idempotent requests. If provided, ensures that\
+          \ identical requests with the same key will only be processed once."
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Calendar retrieved
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AmortizationCalendarEntry"
   /api/v1/loan-servicing/cases/{caseId}/schedule:
     get:
       tags:
@@ -1125,6 +1156,21 @@ paths:
                 $ref: "#/components/schemas/PaginationResponseLoanAccrualDTO"
 components:
   schemas:
+    AmortizationCalendarEntry:
+      type: object
+      properties:
+        installmentNumber:
+          type: integer
+          format: int32
+        dueDate:
+          type: string
+          format: date
+        principal:
+          type: number
+        interest:
+          type: number
+        remainingBalance:
+          type: number
     RegisterLoanAccrualCommand:
       required:
       - accrualAmount

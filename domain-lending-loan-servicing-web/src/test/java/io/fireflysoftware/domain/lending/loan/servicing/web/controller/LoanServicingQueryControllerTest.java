@@ -19,6 +19,7 @@ package io.fireflysoftware.domain.lending.loan.servicing.web.controller;
 
 import io.fireflysoftware.core.lending.servicing.sdk.model.*;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.*;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.AmortizationCalendarEntry;
 import org.fireflyframework.cqrs.query.QueryBus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -74,6 +78,26 @@ class LoanServicingQueryControllerTest {
         webTestClient.get().uri(BASE + "/balances", caseId)
                 .exchange()
                 .expectStatus().is5xxServerError();
+    }
+
+    @Test
+    void getCalendar_shouldReturnTheRemainingBalance() {
+        UUID caseId = UUID.randomUUID();
+        when(queryBus.<List<AmortizationCalendarEntry>>query(any(GetAmortizationCalendarQuery.class)))
+                .thenReturn(Mono.just(List.of(new AmortizationCalendarEntry(
+                        1, LocalDate.of(2026, 2, 1),
+                        new BigDecimal("88.00"), new BigDecimal("12.00"), new BigDecimal("1112.00")))));
+
+        webTestClient.get().uri(BASE + "/calendar", caseId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$[0].dueDate").isEqualTo("2026-02-01")
+                .jsonPath("$[0].principal").isEqualTo(88.00)
+                .jsonPath("$[0].interest").isEqualTo(12.00)
+                .jsonPath("$[0].remainingBalance").isEqualTo(1112.00);
+
+        verify(queryBus).query(any(GetAmortizationCalendarQuery.class));
     }
 
     // ---- GET /schedule ----

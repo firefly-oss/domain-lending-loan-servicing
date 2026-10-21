@@ -19,6 +19,7 @@ package io.fireflysoftware.domain.lending.loan.servicing.web.controller;
 
 import io.fireflysoftware.core.lending.servicing.sdk.model.*;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.*;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.AmortizationCalendarEntry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -52,6 +54,18 @@ public class LoanServicingQueryController {
         log.debug("GET /api/v1/loan-servicing/cases/{}/balances", caseId);
         return queryBus.<PaginationResponseLoanBalanceDTO>query(
                         GetLoanBalancesQuery.builder().loanCaseId(caseId).build())
+                .map(ResponseEntity::ok);
+    }
+
+    @GetMapping("/calendar")
+    @Operation(summary = "Read the amortization calendar",
+            description = "Read the current amortization calendar, including the remaining balance of each installment.")
+    @ApiResponse(responseCode = "200", description = "Calendar retrieved")
+    public Mono<ResponseEntity<List<AmortizationCalendarEntry>>> getAmortizationCalendar(
+            @Parameter(description = "Loan case identifier") @PathVariable("caseId") UUID caseId) {
+        log.debug("GET /api/v1/loan-servicing/cases/{}/calendar", caseId);
+        return queryBus.<List<AmortizationCalendarEntry>>query(
+                        GetAmortizationCalendarQuery.builder().loanCaseId(caseId).build())
                 .map(ResponseEntity::ok);
     }
 
