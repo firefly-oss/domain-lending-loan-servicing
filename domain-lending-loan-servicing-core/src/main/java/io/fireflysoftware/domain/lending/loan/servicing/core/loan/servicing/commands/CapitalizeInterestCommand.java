@@ -17,13 +17,13 @@
 
 package io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands;
 
+import lombok.Data;
 import org.fireflyframework.cqrs.command.Command;
 
-import lombok.Data;
-
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
-public class CapitalizeInterestCommand  implements Command<UUID> {
-
+public class CapitalizeInterestCommand implements Command<UUID> {
+    private LocalDate capitalizationDate;
 }

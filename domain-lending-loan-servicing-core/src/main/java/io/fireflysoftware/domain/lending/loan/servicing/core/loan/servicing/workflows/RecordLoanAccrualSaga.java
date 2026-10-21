@@ -1,0 +1,59 @@
+/*
+ * Copyright 2025 Firefly Software Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+package io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.workflows;
+
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.RegisterLoanAccrualCommand;
+import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.RemoveLoanAccrualCommand;
+import org.fireflyframework.cqrs.command.CommandBus;
+import org.fireflyframework.orchestration.core.context.ExecutionContext;
+import org.fireflyframework.orchestration.saga.annotation.Saga;
+import org.fireflyframework.orchestration.saga.annotation.SagaStep;
+import org.fireflyframework.orchestration.saga.annotation.StepEvent;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+
+import java.util.UUID;
+
+@Saga(name = "RecordLoanAccrualSaga")
+@Service
+public class RecordLoanAccrualSaga {
+
+    private final CommandBus commandBus;
+
+    public RecordLoanAccrualSaga(CommandBus commandBus) {
+        this.commandBus = commandBus;
+    }
+
+    @SagaStep(id = "registerAccrual", compensate = "removeAccrual")
+    @StepEvent(type = "loanAccrual.registered")
+    public Mono<UUID> registerAccrual(RegisterLoanAccrualCommand command, ExecutionContext ctx) {
+        if (command.getAccrualAmount() == null || command.getAccrualDate() == null || command.getAccrualType() == null) {
+            return Mono.error(new IllegalArgumentException("Accrual amount, date, and type are required"));
+        }
+        ctx.putVariable("caseId", command.getLoanServicingCaseId());
+        return commandBus.send(command);
+    }
+
+    public Mono<Void> removeAccrual(UUID accrualId, ExecutionContext ctx) {
+        UUID caseId = ctx.getVariableAs("caseId", UUID.class);
+        if (accrualId == null || caseId == null) {
+            return Mono.empty();
+        }
+        return commandBus.send(new RemoveLoanAccrualCommand(caseId, accrualId));
+    }
+}

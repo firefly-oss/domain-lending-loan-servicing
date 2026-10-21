@@ -17,13 +17,14 @@
 
 package io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands;
 
-import org.fireflyframework.cqrs.command.Command;
-
+import io.fireflysoftware.core.lending.servicing.sdk.model.LoanRateChangeDTO;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.fireflyframework.cqrs.command.Command;
 
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class SetFixedRateCommand  implements Command<UUID> {
-
+public class SetFixedRateCommand extends LoanRateChangeDTO implements Command<UUID> {
 }
