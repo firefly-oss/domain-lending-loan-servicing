@@ -17,6 +17,7 @@
 
 package io.fireflysoftware.domain.lending.loan.servicing.web.controller;
 
+import io.fireflysoftware.core.lending.servicing.sdk.model.LoanServicingCaseDTO;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.EndOfDayResult;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.finance.LoanEndOfDayService;
 import io.fireflysoftware.domain.lending.loan.servicing.core.loan.servicing.commands.*;
@@ -30,6 +31,9 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/loans")
@@ -134,7 +138,21 @@ public class LoanServicingController {
     @PostMapping("/{loanId}/restructure")
     public Mono<ResponseEntity<Object>> applyRestructure(@PathVariable String loanId, @Valid @RequestBody ApplyRestructureCommand command) {
         return loanServicingService.applyRestructure(loanId, command)
-                .thenReturn(ResponseEntity.ok().build());
+                .map(saga -> {
+                    Map<String, Object> body = new LinkedHashMap<>();
+                    saga.resultOf("registerRestructuring", UUID.class)
+                            .ifPresent(id -> body.put("loanRestructuringId", id.toString()));
+                    saga.resultOf("applyNewTerms", LoanServicingCaseDTO.class)
+                            .ifPresent(loan -> {
+                                if (loan.getServicingStatus() != null) {
+                                    body.put("status", loan.getServicingStatus().getValue());
+                                }
+                                if (loan.getRemarks() != null) {
+                                    body.put("reason", loan.getRemarks());
+                                }
+                            });
+                    return ResponseEntity.ok((Object) body);
+                });
     }
 
     @Operation(summary = "Mark loan in arrears", description = "Flag loan in arrears as of a business date.")
