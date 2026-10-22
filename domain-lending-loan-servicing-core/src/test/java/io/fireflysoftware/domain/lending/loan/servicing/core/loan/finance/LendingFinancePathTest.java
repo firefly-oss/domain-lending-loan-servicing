@@ -25,6 +25,7 @@ import io.fireflysoftware.core.lending.servicing.sdk.api.LoanAccrualApi;
 import io.fireflysoftware.core.lending.servicing.sdk.api.LoanRepaymentScheduleApi;
 import io.fireflysoftware.core.lending.servicing.sdk.api.LoanServicingCaseApi;
 import io.fireflysoftware.core.lending.servicing.sdk.model.LoanAccrualDTO;
+import io.fireflysoftware.core.lending.servicing.sdk.model.LoanRepaymentScheduleDTO;
 import io.fireflysoftware.core.lending.servicing.sdk.model.LoanServicingCaseDTO;
 import io.fireflysoftware.core.lending.servicing.sdk.model.PaginationResponseLoanAccrualDTO;
 import io.fireflysoftware.core.lending.servicing.sdk.model.PaginationResponseLoanRepaymentScheduleDTO;
@@ -32,11 +33,8 @@ import io.fireflysoftware.core.lending.servicing.sdk.model.PaginationResponseLoa
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.ClientResponse;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
@@ -49,6 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -93,21 +92,19 @@ class LendingFinancePathTest {
     void calendarAdapterReadsTheRemainingBalanceFromTheCoreResponse() {
         UUID caseId = UUID.randomUUID();
         UUID scheduleId = UUID.randomUUID();
-        String body = """
-                [{"loanRepaymentScheduleId":"%s","loanServicingCaseId":"%s","installmentNumber":1,"dueDate":"2026-02-01","principalDue":88.00,"interestDue":12.00,"remainingBalance":1112.00,"isPaid":false,"scheduleStatus":"CURRENT"}]
-                """.formatted(scheduleId, caseId);
-        AtomicInteger calls = new AtomicInteger();
-        WebClient client = WebClient.builder().exchangeFunction(request -> {
-            calls.incrementAndGet();
-            assertThat(request.url().getPath()).contains("/repayment-schedules/calendar");
-            return Mono.just(ClientResponse.create(HttpStatus.OK)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .body(body)
-                    .build());
-        }).build();
-        List<StoredInstallment> read = new SdkLoanCalendarAdapter(client, "http://localhost:8082")
-                .read(caseId).block();
-        assertThat(calls).hasValue(1);
+        LoanRepaymentScheduleDTO row = new LoanRepaymentScheduleDTO(scheduleId);
+        row.setLoanServicingCaseId(caseId);
+        row.setInstallmentNumber(1);
+        row.setDueDate(LocalDate.of(2026, 2, 1));
+        row.setPrincipalDue(new BigDecimal("88.00"));
+        row.setInterestDue(new BigDecimal("12.00"));
+        row.setRemainingBalance(new BigDecimal("1112.00"));
+        row.setIsPaid(false);
+        row.setScheduleStatus(LoanRepaymentScheduleDTO.ScheduleStatusEnum.CURRENT);
+        LoanRepaymentScheduleApi schedules = mock(LoanRepaymentScheduleApi.class);
+        when(schedules.readCalendar(eq(caseId), eq(false), any())).thenReturn(Flux.just(row));
+        List<StoredInstallment> read = new SdkLoanCalendarAdapter(schedules).read(caseId).block();
+        verify(schedules).readCalendar(eq(caseId), eq(false), any());
         assertThat(read).hasSize(1);
         assertThat(read.get(0).dueDate()).isEqualTo(LocalDate.of(2026, 2, 1));
         assertThat(read.get(0).principalDue()).isEqualByComparingTo("88.00");
